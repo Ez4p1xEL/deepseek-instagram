@@ -9,6 +9,7 @@ out/
 .tmp*/
 *.log
 *.tmp-spec.json
+*.tgz
 
 # ── 隐私 / 凭证：绝对不要提交 ──────────────────────────────
 # Instagram 会话凭证（sessionid 落地在 session.json，cookie 在 credential.json）

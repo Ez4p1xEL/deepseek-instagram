@@ -10,19 +10,32 @@
 
 ## 安装
 
-插件是标准 DSH bundle，用官方途径装进 desktop profile：
+从 npm 安装（推荐，装进 desktop profile）：
+
+```bash
+dsh plugin --profile desktop add deepseek-instagram
+```
+
+装完按返回的 `application` 字段处理：`applied` 刷新页面即可，`restart-required` 需要重启 DSH。
+装好后左侧「设置」里会多出 **Instagram** 一项。
+
+本地开发（目录安装，改代码不用重装，重启 DSH 即生效）：
 
 ```
 plugin_manager install_bundle  target = D:\Space\Workspace\deepseek-instagram
 ```
 
-或者命令行等价物：
+或命令行等价物：
 
 ```bash
 dsh plugin --profile desktop add link:D:\Space\Workspace\deepseek-instagram
 ```
 
-装完按返回的 `application` 字段处理：`applied` 刷新页面即可，`restart-required` 需要重启 DSH。装好后左侧「设置」里会多出 **Instagram** 一项。
+从源码安装（未发布 npm 时也可用）：
+
+```bash
+dsh plugin --profile desktop add github:p1xEL_mc/deepseek-instagram
+```
 
 ## 第一次使用（3 步）
 
@@ -196,6 +209,16 @@ log.txt          运行日志（设置页显示）
 install.log      依赖安装日志
 .venv/           独立 Python 环境
 ```
+
+## 发布与收录
+
+- **发 npm**：`npm publish`（包名 `deepseek-instagram`）。发布前先 `npm pack --dry-run` 看一眼包里有什么；
+  `files` 白名单只放 `index.js`、`client.js`、`cordis.patch.yml`、`lib/` 与两个 Python 文件，不会带出 `.tmp/`、`.venv*`、`out/` 或任何凭证。
+- **进社区插件市场**：把仓库公开，然后在 GitHub 仓库页 **About → 齿轮图标 → Topics** 里加 `dsh-plugin`。
+  [dsh-plugin.org](https://dsh-plugin.org/zh/submit) 会按这个 topic 自动发现并收录；想更快可以按官方模板在
+  [dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub/issues/new) 提一个 `[插件提交] <owner>/<repo> — <一句话价值>` 的 Issue。
+- **想在 DSH 内的「插件市场」里一键安装**：必须真的有 npm 包；只有 GitHub 仓库时，用户只能用
+  `dsh plugin --profile desktop add github:p1xEL_mc/deepseek-instagram` 源码安装，不会出现在插件市场的目录里。
 
 ## License
 
