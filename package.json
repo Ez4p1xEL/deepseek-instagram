@@ -33,14 +33,14 @@
     "note"
   ],
   "license": "MIT",
-  "author": "p1xEL_mc",
+  "author": "Ez4p1xEL",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/p1xEL_mc/deepseek-instagram.git"
+    "url": "git+https://github.com/Ez4p1xEL/deepseek-instagram.git"
   },
-  "homepage": "https://github.com/p1xEL_mc/deepseek-instagram#readme",
+  "homepage": "https://github.com/Ez4p1xEL/deepseek-instagram#readme",
   "bugs": {
-    "url": "https://github.com/p1xEL_mc/deepseek-instagram/issues"
+    "url": "https://github.com/Ez4p1xEL/deepseek-instagram/issues"
   },
   "engines": {
     "dsh": ">=0.1.7-rc.1",

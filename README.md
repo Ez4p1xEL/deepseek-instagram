@@ -34,7 +34,7 @@ dsh plugin --profile desktop add link:D:\Space\Workspace\deepseek-instagram
 从源码安装（未发布 npm 时也可用）：
 
 ```bash
-dsh plugin --profile desktop add github:p1xEL_mc/deepseek-instagram
+dsh plugin --profile desktop add github:Ez4p1xEL/deepseek-instagram
 ```
 
 ## 第一次使用（3 步）
@@ -218,7 +218,7 @@ install.log      依赖安装日志
   [dsh-plugin.org](https://dsh-plugin.org/zh/submit) 会按这个 topic 自动发现并收录；想更快可以按官方模板在
   [dsh-plugin-hub](https://github.com/dshplugin/dsh-plugin-hub/issues/new) 提一个 `[插件提交] <owner>/<repo> — <一句话价值>` 的 Issue。
 - **想在 DSH 内的「插件市场」里一键安装**：必须真的有 npm 包；只有 GitHub 仓库时，用户只能用
-  `dsh plugin --profile desktop add github:p1xEL_mc/deepseek-instagram` 源码安装，不会出现在插件市场的目录里。
+  `dsh plugin --profile desktop add github:Ez4p1xEL/deepseek-instagram` 源码安装，不会出现在插件市场的目录里。
 
 ## License
 
