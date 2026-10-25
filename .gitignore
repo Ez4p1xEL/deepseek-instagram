@@ -36,6 +36,9 @@ persona.md
 usage.json
 log.txt
 
+# 本地手册 / 个人笔记：只在本机，不提交、不打进 npm 包
+MANUAL.md
+
 # 系统 / 编辑器垃圾
 .DS_Store
 Thumbs.db

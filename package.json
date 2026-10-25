@@ -1,7 +1,7 @@
 {
   "name": "deepseek-instagram",
   "version": "0.1.0",
-  "description": "DSH 插件：把 Instagram 变成你的 AI 助理 —— 自动发 Story / Note，分享 DSH 使用日常",
+  "description": "A resident Instagram assistant for DeepSeek Harness — persona-driven Stories and Notes from your DSH usage, controlled only by the owner's DMs.",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -28,6 +28,7 @@
     "dsh",
     "dsh-plugin",
     "instagram",
+    "instagram-assistant",
     "assistant",
     "story",
     "note"
