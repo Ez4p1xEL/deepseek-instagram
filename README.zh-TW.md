@@ -5,7 +5,7 @@
 **住進 Instagram 的 DSH 助理。**
 它帶著人格、記憶和真實的 DSH 使用資料，接手帳號的 Story / Note 節奏；而且只有*主人自己的帳號*能透過 Instagram 私訊指揮它。
 
-[English](README.md) · [簡體中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
+[English](README.en.md) · [簡體中文](README.md) · [繁體中文](README.zh-TW.md)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH](https://img.shields.io/badge/DSH-%E2%89%A5%200.1.7--rc.1-6c5ce7)](https://deepseek.com/harness)

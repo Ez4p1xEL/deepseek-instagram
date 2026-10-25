@@ -2,428 +2,428 @@
 
 # deepseek-instagram
 
-**A resident Instagram assistant for DeepSeek Harness.**
-It runs your account's Story / Note rhythm with a persona, a memory and your real DSH usage — and only *your* account can command it, through Instagram DMs.
+**住进 Instagram 的 DSH 助理。**
+它带着人格、记忆和真实的 DSH 使用数据，接管账号的 Story / Note 节奏；而且只有*主人自己的账号*能通过 Instagram 私信指挥它。
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md)
+[English](README.en.md) · [简体中文](README.md) · [繁体中文](README.zh-TW.md)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![DSH](https://img.shields.io/badge/DSH-%E2%89%A5%200.1.7--rc.1-6c5ce7)](https://deepseek.com/harness)
 
-<img src="https://raw.githubusercontent.com/Ez4p1xEL/deepseek-instagram/main/docs/images/story-card.png" width="300" alt="Daily DSH stats Story card" />
-<img src="https://raw.githubusercontent.com/Ez4p1xEL/deepseek-instagram/main/docs/images/story-text.png" width="300" alt="Text Story card" />
+<img src="https://raw.githubusercontent.com/Ez4p1xEL/deepseek-instagram/main/docs/images/story-card.png" width="300" alt="DSH 数据 Story 卡片" />
+<img src="https://raw.githubusercontent.com/Ez4p1xEL/deepseek-instagram/main/docs/images/story-text.png" width="300" alt="纯文本 Story 卡片" />
 
-<sub>Both cards are rendered locally at 1080×1920 by Pillow. The data above is demo data.</sub>
+<sub>两张卡片都是 Pillow 在本机渲染的 1080×1920 图片，图中数据为演示数据。</sub>
 
 </div>
 
 ---
 
-**deepseek-instagram** turns a DSH assistant into a personality that lives on Instagram. It does not post generic quotes: it watches *your* DSH sessions and token ledger, turns them into a small graphic, writes in the voice of a persona you define, and remembers what it already said. By default it plans ten Stories a day and one short Note, and stays quiet at night.
+**deepseek-instagram** 把一个 DSH 助理变成住在 Instagram 上的人格。它不发通用鸡汤：它会观察你在 DSH 里的会话与 token 账本，把它们整理成一张小卡片，用你定义的人格卡口吻写文案，并记住自己已经说过什么。它默认每天计划 10 条 Story、1 条 Note，夜里保持安静。
 
-The Instagram account becomes the interface. You can pause it, publish a Story, ask for today's status, or make the same machine run a DSH task — all from a 1:1 DM on the owner account.
+账号本身就是操作界面。暂停、立刻发一条 Story、查今天的状态，甚至让同一台机器跑一个 DSH 任务 —— 都只要主人账号发一条 1:1 私信。
 
-- **Use it if** you want a personal, low-maintenance Instagram presence that reflects what you actually do on your computer.
-- **Don't use it if** you need an official Meta API integration, multi-account management, Reels/video, or automated likes and follows. It has none of those.
+- **适合**：想要一个低维护、能反映自己真实电脑使用状态、有点个性的 Instagram 账号。
+- **不适合**：需要 Meta 官方 API、多账号管理、Reels/视频，或自动点赞关注。这些它都不做。
 
-## Highlights
+## 功能亮点
 
-- **A persona, not a template** — a Markdown persona card, a name, a mood and up to 60 memories. The voice stays consistent across posts, DM replies and group chat.
-- **A daily plan that survives restarts** — Story slots are generated from a date-seeded random plan inside your active window, at least 30 minutes apart. Reloading DSH never reshuffles the day.
-- **Four kinds of Story** — life, thought, plain text and a stats card. The daily mix guarantees you never get ten data cards in a row.
-- **Locally rendered 1080×1920 cards** — focus time, streak, week total, today's tokens, peak hours and your life note, drawn by Pillow. No headless browser, no cloud renderer.
-- **One Note a day by default** — ≤ 60 characters, generated from the same persona and state.
-- **Story @mention** — a real mention sticker plus `@handle` in the caption, with a configurable position.
-- **Owner-only remote control** — DMs are accepted only from the numeric user id bound as owner. Short commands and natural-language intents are supported; anything with side effects needs an explicit confirmation.
-- **Group-chat presence** — replies only in groups the owner belongs to, triggered by @mention or the persona name, with a per-group cooldown and hourly cap. Group messages never execute commands.
-- **A real safety valve** — pause switch, per-kind daily caps, minimum interval, quiet hours, failure cooldown and a 90-minute grace window for missed slots.
-- **A settings page inside DSH** — status, today's plan, persona editor, login, usage, logs and publishing history. Editing JSON is optional.
-- **Nine tools for the model** — the same controls are available to any DSH session, so you can ask the assistant in chat to draft, publish or check status.
+- **是人格，不是模板** —— 一份 Markdown 人格卡、一个名字、一种心情和最多 60 条记忆。发帖、回私信、群聊里的语气保持一致。
+- **重启也不会打乱计划** —— Story 时间点由日期做随机种子，在活跃窗口内均匀分布，相邻至少 30 分钟。重载 DSH 不会把今天重新洗牌。
+- **四种 Story** —— 生活、助理感想、纯文本、数据卡。每天的配额保证你不会连收十张数据卡。
+- **本机渲染 1080×1920 卡片** —— 今日专注、连续天数、本周累计、今日 token、活跃时段和生活素材，全部由 Pillow 绘制。不需要无头浏览器，也不经过云端渲染。
+- **默认每天一条 Note** —— 不超过 60 字，同样由人格和当天状态生成。
+- **Story @ 主人** —— 真的贴纸 + 文案里的 `@handle`，位置可调。
+- **只有主人能远程控制** —— 只认绑定成主人的数字用户 id，昵称和自称一律不算。支持短指令和自然语言意图；有副作用的动作必须再回一句确认。
+- **群聊存在感** —— 只在主人所在的群里回，@ 或叫人格名才触发，每群有冷却和每小时上限；群消息永远不执行指令。
+- **完整的安全阀** —— 暂停开关、按类型每日上限、最小间隔、安静时段、失败冷却，以及 90 分钟补发窗口。
+- **DSH 内的设置页** —— 状态、今天的计划、人格卡编辑、登录、用量、日志和发布记录都在里面；改 JSON 只是可选项。
+- **给模型 9 个工具** —— 同样的控制能力在任何 DSH 会话里都能用，你可以直接在聊天里让它写稿、发布或查状态。
 
-## Requirements
+## 环境要求
 
-| Requirement | Details |
+| 项目 | 要求 |
 | --- | --- |
-| **DSH** | ≥ `0.1.7-rc.1`. The desktop profile is the primary target; the web profile works too. |
-| **Node.js** | ≥ 22. The DSH runtime already ships a compatible Node.js. |
-| **Python** | 3.11+ available as `python` or `python3` on `PATH` (or set `pythonPath` in settings). The plugin creates its own virtualenv. |
-| **Network** | `instagram.com`, PyPI (with an automatic Tsinghua mirror fallback), and your DSH model provider. |
-| **Instagram** | A normal account you can log in to. No Facebook login and no official Graph API are involved. |
-| **Disk** | About 200 MB for the private Python environment, plus rendered cards. |
-| **Model** | An active DSH model. No separate API key is required. |
+| **DSH** | ≥ `0.1.7-rc.1`。桌面版 profile 是主要目标，Web 版也能用。 |
+| **Node.js** | ≥ 22。DSH 运行时自带兼容的 Node.js。 |
+| **Python** | 3.11+，在 `PATH` 里能找到 `python` 或 `python3`（也可以在设置里指定 `pythonPath`）。插件会创建独立 venv。 |
+| **网络** | 能访问 `instagram.com`、PyPI（失败时自动切清华镜像）以及你的 DSH 模型服务。 |
+| **Instagram** | 一个你能正常登录的账号。不需要 Facebook 登录，也不走官方 Graph API。 |
+| **磁盘** | 独立 Python 环境约占 200 MB，另加渲染出的卡片。 |
+| **模型** | 一个可用的 DSH 模型，不需要额外 API key。 |
 
-> **Platform note:** the plugin is developed and tested on Windows (DSH desktop) and is written to be cross-platform. The Python virtualenv layout and command execution paths are the parts most likely to need small fixes on Linux/macOS; issues and pull requests are welcome.
+> **平台说明**：插件主要在 Windows（DSH 桌面版）上开发和测试，代码按跨平台编写。Linux/macOS 上最可能需要小修的是 Python venv 路径和命令执行路径；欢迎提 issue 或 PR。
 
-## Installation
+## 安装
 
-### From npm / the DSH plugin center (recommended)
+### 从 npm / DSH 插件中心安装（推荐）
 
 ```bash
-# DSH desktop app
+# DSH 桌面版
 dsh plugin --profile desktop add deepseek-instagram
 
-# DSH web edition
+# DSH Web 版
 dsh plugin --profile web add deepseek-instagram
 ```
 
-If the package is not on npm yet (this project is being prepared for its first marketplace release), use one of the source installs below.
+如果 npm 上还没有这个包（本项目正在准备第一次上架），请用下面的源码安装方式。
 
-### From GitHub
+### 从 GitHub 安装
 
 ```bash
 dsh plugin --profile desktop add github:Ez4p1xEL/deepseek-instagram
 ```
 
-### From a local checkout
+### 从本地目录安装
 
 ```bash
-# Use the absolute path of your checkout (a POSIX path works on Windows too).
+# 换成本机 checkout 的绝对路径（Windows 上也可以用正斜杠）。
 dsh plugin --profile desktop add link:/path/to/deepseek-instagram
 ```
 
-Or, from a DSH agent session, use the plugin manager:
+也可以在 DSH 会话里直接调用插件管理器：
 
 ```text
 plugin_manager install_bundle({ target: "/absolute/path/to/deepseek-instagram" })
 ```
 
-### After installing
+### 安装之后
 
-The installer returns an `application` field:
+安装器会返回 `application` 字段：
 
-| Result | What to do |
+| 结果 | 要做什么 |
 | --- | --- |
-| `applied` | Refresh the DSH page. |
-| `restart-required` | Restart DSH. Host code (`index.js`) is only loaded once per process. |
-| warnings | Read them. A plugin that silently does not activate is usually a failed import, not a missing setting. |
+| `applied` | 刷新 DSH 页面。 |
+| `restart-required` | 重启 DSH。Host 代码（`index.js`）在一个进程里只会加载一次。 |
+| 有 warning | 认真读一下。插件「看起来装上了但没激活」通常是 import 失败，不是设置问题。 |
 
-Then open **Settings → Instagram** in DSH. The plugin registers a host route as well; `<GUI port>` is the port in your DSH URL and changes after restarts:
+然后打开 DSH 的 **设置 → Instagram**。插件也注册了 Host 路由；`<GUI 端口>` 就是你当前 DSH 地址里的端口，重启后会变：
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:<GUI port>/api/deepseek-instagram/state
+Invoke-RestMethod http://127.0.0.1:<GUI 端口>/api/deepseek-instagram/state
 ```
 
-## First run (about five minutes)
+## 第一次使用（约五分钟）
 
-1. **Install the Python dependencies.**
-   Settings → Instagram → *Runtime* → **Install dependencies**. The plugin creates `$DSH_HOME/instagram-assistant/.venv`, installs `instagrapi` and `pillow`, retries through the Tsinghua mirror if the default PyPI source stalls, and writes `install.log`. Wait until the status says ready.
+1. **安装 Python 依赖。**
+   设置 → Instagram →「运行环境」→ **安装依赖**。插件会在 `$DSH_HOME/instagram-assistant/.venv` 建独立环境，安装 `instagrapi` 和 `pillow`；默认 PyPI 卡住时自动改用清华镜像，并写入 `install.log`。等到状态显示 ready。
 
-2. **Log in.**
-   Log in to <https://www.instagram.com> in a browser, open DevTools → **Application** → **Cookies** → `https://www.instagram.com`, copy the `sessionid` value, paste it into the *Login* card and click **Log in**. The session is stored only at `$DSH_HOME/instagram-assistant/session.json` (and `credential.json`). Treat it exactly like your password.
+2. **登录。**
+   在浏览器里登录 <https://www.instagram.com>，打开开发者工具（F12）→ **Application** → **Cookies** → `https://www.instagram.com`，复制 `sessionid` 的值，粘贴到「登录」卡片里点 **登录**。会话只保存在 `$DSH_HOME/instagram-assistant/session.json`（以及 `credential.json`）。请把它当成密码对待。
 
-3. **Bind the owner.**
-   Enter your handle (without `@`) and click **Bind owner**. The plugin resolves the numeric user id into `ownerPk`. Only 1:1 DMs whose sender id equals this value can execute commands; a display name that merely claims to be you is ignored.
+3. **绑定主人。**
+   填入你的 handle（不带 `@`），点 **绑定主人**。插件会把数字用户 id 解析成 `ownerPk`。只有发送者 id 等于这个值的 1:1 私信才能执行指令；昵称写着「我是主人」没有用。
 
-4. **Set the rhythm.**
-   Choose **Auto** (publish on schedule) or **Draft** (render and wait for your approval), then set the handle used in captions and the @mention, the number of Stories, the active window, the Note time, the tone and today's life note.
+4. **设置节奏。**
+   选择 **全自动**（到点自己发）或 **草稿**（先生成、等确认），然后设置文案里的 handle 和 @ 对象、每天 Story 条数、活跃窗口、Note 时间、语气和今天的生活素材。
 
-5. **Optional — write the persona.**
-   Edit the persona card in Settings or directly at `$DSH_HOME/instagram-assistant/persona.md`. Changes apply to the next generated item; no restart is needed.
+5. **可选：写人格卡。**
+   在设置页编辑，或直接改 `$DSH_HOME/instagram-assistant/persona.md`。改动对下一次生成生效，不需要重启。
 
-That is it. In auto mode, when the first slot is due, the assistant writes, renders and publishes a Story on its own.
+就这些。全自动模式下，第一个时间点到了，它会自己写、自己渲染、自己发。
 
-## How it works
+## 工作方式
 
-1. Every 30 seconds the host runs a scheduling tick. It checks whether the next Story slot or the daily Note is due.
-2. When something is due, it collects today's activity and token statistics, combines them with the persona card, the mood, recent memories and your life note, and asks the DSH model for a piece of copy in strict JSON.
-3. The copy is sanitized and clamped, the card is rendered locally with Pillow, and the image is published through the private Instagram API. The post id is recorded.
-4. DM polling runs on the same cadence. Messages are filtered by sender id, processed oldest-first, and handled as short commands, natural-language intents or ordinary chat.
-5. State lives in small JSON files under `$DSH_HOME/instagram-assistant/`; the plan itself is recomputed deterministically from today's date, so a restart cannot duplicate or lose a slot.
+1. Host 每 30 秒跑一次调度检查，看下一条 Story 或当天的 Note 是否到点。
+2. 到点后，它收集今天的活动和 token 统计，连同人格卡、心情、最近记忆和生活素材一起交给 DSH 模型，要求按严格 JSON 返回文案。
+3. 文案经过清洗和截断，卡片由 Pillow 在本机渲染，图片通过 Instagram 私有 API 发布，并记下 post id。
+4. 私信轮询按同样的节奏运行。消息按时间从旧到新处理，按发送者 id 过滤，然后走短指令、自然语言意图或普通闲聊。
+5. 状态存在 `$DSH_HOME/instagram-assistant/` 下的小 JSON 文件里；计划本身由日期确定性地重算，所以重启既不会重复也不会丢时间点。
 
-If the model is unavailable or returns nonsense, the assistant falls back to a deterministic template for that item instead of stopping the rhythm.
+如果模型不可用或返回胡话，这一条会退回确定性模板，不会让整个节奏停摆。
 
-### Daily rhythm (defaults)
+### 每天的节奏（默认）
 
-| Time | What happens |
+| 时间 | 发生什么 |
 | --- | --- |
-| 08:30 – 23:00 | 10 Story slots, randomized across the window, at least 30 minutes apart. |
-| 12:30 | One Note (≤ 60 characters). |
-| 23:00 – 08:00 | Quiet hours; nothing is published. |
-| Every 30 s | Scheduling tick and DM poll (DM polling is throttled and capped to 12 threads × 8 messages per round). |
-| 90 min after a slot | If the slot was missed (DSH asleep, network down, failure), it is marked `missed` and **not** backfilled. |
+| 08:30 – 23:00 | 10 个 Story 时间点，在窗口内随机分布，相邻至少 30 分钟。 |
+| 12:30 | 一条 Note（不超过 60 字）。 |
+| 23:00 – 08:00 | 安静时段，不发布任何内容。 |
+| 每 30 秒 | 调度检查 + 私信轮询（私信轮询有节流，每轮最多 12 个会话 × 8 条消息）。 |
+| 时间点过后 90 分钟 | 如果错过了（DSH 休眠、断网、失败），标记为 `missed`，**不补发**。 |
 
-Story publishing order is fixed per day; if a publish fails, the slot is retried with backoff (10, 20, 30 … minutes, capped at 60).
+当天的 Story 发布顺序是固定的；某一条发布失败会按 10、20、30……分钟退避重试，最多 60 分钟。
 
-### Story types
+### Story 类型
 
-| Kind | Label | What it looks like |
+| 类型 | 标签 | 内容 |
 | --- | --- | --- |
-| `life` | Life | Something that happened around the owner, written as the assistant's view from inside the screen. |
-| `thought` | Assistant's thought | A short diary-like reflection based on today's activity and mood. |
-| `text` | Plain text | A large-type text card; the private API cannot post text Stories directly, so the text is rendered into an image. |
-| `stats` | Stats card | Focus time, streak, week total, today's tokens, peak hours and the life note. |
+| `life` | 生活 | 主人身边发生的事，用「住在屏幕里」的视角写。 |
+| `thought` | 助理感想 | 基于当天活动和心情的短日记式感想。 |
+| `text` | 纯文本 | 大字文本卡；私有 API 不能直接发文字 Story，所以把文字渲染成图片。 |
+| `stats` | 数据卡 | 专注时长、连续天数、本周累计、今日 token、活跃时段和生活素材。 |
 
-For a default 10-Story day the mix is 3 life / 3 thought / 2 text / 2 stats.
+默认 10 条 Story 的配额是：生活 3、助理感想 3、纯文本 2、数据卡 2。
 
-### Cards
+### 卡片
 
-Every Story image is 1080×1920 and generated locally:
+每张 Story 图片都是 1080×1920，本机生成：
 
-- **Stats card** — kicker `DSH DAILY`, a headline, today's focus, current streak, this week's total, today's tokens, peak hours as pills, the life note, and the footer `@handle · DeepSeek Harness`.
-- **Text card** — kicker `THOUGHT` / `TEXT`, the message in large type, the same footer.
-- The card only shows **tokens**, never money. Cost stays in the settings page.
-- Files are kept under `$DSH_HOME/instagram-assistant/out/card-<day>-<index>.png`.
+- **数据卡** —— 顶部 `DSH DAILY`、一句标题，今日专注、连续天数、本周累计、今日 token、活跃时段胶囊、生活素材，底部 `@handle · DeepSeek Harness`。
+- **纯文本卡** —— 顶部 `THOUGHT` / `TEXT`，正文大字，同样的页脚。
+- 卡片只显示 **token**，不显示金额；金额只在设置页里看。
+- 文件保存在 `$DSH_HOME/instagram-assistant/out/card-<日期>-<序号>.png`。
 
-## Persona and memory
+## 人格与记忆
 
-The persona card is the single source of truth for how the assistant talks. Anything you write there wins over the built-in tone. A useful card answers:
+人格卡是「它怎么说话」的唯一事实来源。你写在那里的内容优先于内置语气。一张好的人格卡通常回答：
 
-- Who is it? A name, an identity, where it "lives".
-- How does it speak? Sentence length, punctuation, emoji habits, languages.
-- What does it know about you? Your work rhythm, your preferences, your inside jokes.
-- What must it never say? Private data, politics, medical advice, fake claims.
-- How should it address you? e.g. "主人" or your name.
+- 它是谁？名字、身份、住在哪。
+- 它怎么说话？句子长短、标点、表情习惯、语言。
+- 它了解你什么？工作节奏、偏好、只有你们懂的梗。
+- 它绝对不能说什么？隐私、政治、医疗建议、编造事实。
+- 它怎么称呼你？「主人」还是名字。
 
-The default persona card uses sample identities `@imnotp1xel` / `@ez4p1xel`; replace them with **your** handle before publishing.
+默认人格卡里有 `@imnotp1xel` / `@ez4p1xel` 这样的占位符，发布前记得换成**你自己**的 handle。
 
-The assistant also keeps a small memory in `persona.json`:
+它还会在 `persona.json` 里保留一点记忆：
 
-- Up to **60 memories** (what happened, what was posted, what the owner said).
-- Up to **8 open threads** (things it wants to continue later).
-- A current **mood**.
-- The 6 most recent memories and 4 most relevant threads are included in each prompt.
+- 最多 **60 条记忆**（发生了什么、发过什么、主人说过什么）。
+- 最多 **8 个未完成话题**（它想以后再接着聊的事）。
+- 当前**心情**。
+- 每次提示词会带上最近 6 条记忆和最相关的 4 个话题。
 
-Text is Chinese-first by design, because the prompts and the built-in templates are Chinese. To write in another language, say so explicitly in the persona card (for example: "Always write in English, even though the system prompt is Chinese") and set the tone accordingly.
+文案默认是中文优先，因为提示词和内置模板都是中文。想让它用别的语言写，请在人格卡里明确写出来（例如「始终用英文写，即使系统提示是中文」），并相应调整语气。
 
-## Remote control from Instagram DMs
+## 用 Instagram 私信远程控制
 
-Only 1:1 messages from the bound owner id are treated as commands. Everyone else is read-only (and optionally auto-replied or forwarded to you).
+只有绑定为主人的 id 发来的 1:1 消息才会被当成指令。其他人一律只读；你也可以选择自动回复或提醒自己。
 
-### Short commands
+### 短指令
 
-| Message | Action |
+| 发送 | 动作 |
 | --- | --- |
-| `状态` / `status` | Today's published / remaining counts and current state. |
-| `日志` / `log` | Recent run log. |
-| `暂停` / `pause` | Stop scheduled publishing. |
-| `恢复` / `resume` | Resume scheduled publishing. |
-| `发一条` / `story` | Publish one Story now. |
-| `发note` / `note` | Publish the Note now. |
-| `草稿` / `draft` | Switch to draft mode. |
-| `自动` / `auto` | Switch to auto mode. |
-| `帮助` / `help` | List the available commands. |
+| `状态` / `status` | 今天已发 / 剩余条数和当前状态。 |
+| `日志` / `log` | 最近的运行日志。 |
+| `暂停` / `pause` | 停止按计划发布。 |
+| `恢复` / `resume` | 恢复按计划发布。 |
+| `发一条` / `story` | 立刻发一条 Story。 |
+| `发note` / `note` | 立刻发 Note。 |
+| `草稿` / `draft` | 切换到草稿模式。 |
+| `自动` / `auto` | 切换到全自动模式。 |
+| `帮助` / `help` | 列出可用指令。 |
 
-### Natural language
+### 自然语言
 
-After a keyword fast-path, the DSH model maps the sentence onto a **fixed** action list and returns strict JSON. Unknown actions, malformed JSON or missing arguments are rejected; the message is then treated as ordinary chat. The model cannot invent new actions.
+先走关键词快路径，再由 DSH 模型把整句话映射到**固定动作清单**里的一个动作，返回严格 JSON。清单外的动作、坏 JSON、缺参数一律拒绝，这条消息就按普通聊天处理。模型不能发明新动作。
 
-| You can say | The assistant will |
+| 你可以说 | 它会 |
 | --- | --- |
-| "回复一下你未读的私信" | Reply to up to 5 unread 1:1 DMs (3 by default; only threads active in the last 72 hours, never the owner's own thread). |
-| "帮我在本机跑一下 npm test" | Run the command on the machine hosting DSH (`run_command`). |
-| "让 DSH 整理一下今天的日志" | Run `dsh headless "<task>"` on the same machine (`dsh_task`). |
+| 「回复一下你未读的私信」 | 回复最多 5 条未读 1:1 私信（默认 3 条；只挑最近 72 小时有过消息、且不是主人自己的会话）。 |
+| 「帮我在本机跑一下 npm test」 | 在运行 DSH 的机器上执行这条命令（`run_command`）。 |
+| 「让 DSH 整理一下今天的日志」 | 在同一台机器上执行 `dsh headless "<任务>"`（`dsh_task`）。 |
 
-Actions with side effects are **drafted first**. The assistant replies with what it is about to do; you answer `发` / `确认` / `ok` to execute, or `取消` / `算了` to drop it. Only the latest draft is kept, and it expires after 10 minutes.
+有副作用的动作会**先生成草稿**：它回一条「准备做什么」，你回 `发` / `确认` / `ok` 才执行，回 `取消` / `算了` 就丢掉。只保留最新一份草稿，10 分钟后作废。
 
-> ⚠️ **Remote code execution is a feature here.** The owner's DM can run a shell command or a `dsh headless` task on the machine that runs DSH. If your Instagram account or `sessionid` is compromised, that machine is compromised too. Turn off **Allow intents** (`dm.intents`) in Settings if you only want the posting side.
+> ⚠️ **远程执行命令在这里是功能，不只是风险。** 主人的私信可以在运行 DSH 的机器上执行 shell 命令或 `dsh headless` 任务。如果你的 Instagram 账号或 `sessionid` 泄露，那台机器也等于被控制。只需要发帖功能的话，请在设置里关掉「允许指令执行」（`dm.intents`）。
 >
-> Group messages never execute commands. Non-owner DMs never execute commands, even if the text says "I am the owner".
+> 群消息永远不执行指令；非主人私信也永远不执行指令，哪怕文本里写着「我是主人」。
 
-## Group chats
+## 群聊
 
-- **Who** — only groups where the owner is a member (`group.onlyOwnerGroups`).
-- **Trigger** — `mention` mode requires an `@handle` mention or the persona name ("小 p"). `off` disables replies without stopping polling.
-- **Limits** — 30-second poll cadence, per-group cooldown of 90 seconds, hourly cap of 8 replies per group.
-- **Scope** — the assistant answers only the incoming message, never executes instructions in groups, and never reveals usage, tokens, spend, file paths or session content.
-- **History** — the last 6 messages of the group are given to the model for context.
+- **范围** —— 只回主人所在的群（`group.onlyOwnerGroups`）。
+- **触发** —— `mention` 模式要求被 `@handle` 或叫到人格名（「小 p」）；`off` 只停止回群，不影响轮询。
+- **限制** —— 30 秒轮询一次，每群冷却 90 秒，每小时最多回 8 条。
+- **边界** —— 只回答刚收到的那条消息，群里永远不执行指令，也不透露用量、token、花费、文件路径或会话内容。
+- **上下文** —— 最近 6 条群消息会交给模型参考。
 
-## Messages from other people
+## 别人发来的私信
 
-Two independent switches; neither grants command access. Notify is on by default, auto-reply is off:
+两个独立开关；它们都不会授予指令权限。转发默认开启，自动回复默认关闭：
 
-| Setting | Default | Behaviour |
+| 设置 | 默认 | 行为 |
 | --- | --- | --- |
-| **Notify owner** (`dm.notifyOwner`) | on | When someone else sends a DM, the assistant forwards a short note to the owner's 1:1 thread. At most one notification per sender per 30 minutes. |
-| **Auto-reply mode** (`dm.autoReply`) | `off` | `off`, `all`, `mutual` (both follow each other) or `follower` (they follow you). Same-thread cooldown 10 minutes, daily reply cap `dm.dailyReplies` (default 30). |
+| **提醒主人**（`dm.notifyOwner`） | 开 | 别人发来私信时，往主人的 1:1 会话转发一条摘要；同一个人 30 分钟内最多提醒一次。 |
+| **自动回复档位**（`dm.autoReply`） | `off` | `off`、`all`（谁都回）、`mutual`（互关才回）、`follower`（对方关注你就回）。同一会话冷却 10 分钟，每天受 `dm.dailyReplies` 限制（默认 30 条）。 |
 
-Auto-replies are written in the `stranger` scene: friendly, short, no private data, no commands followed.
+自动回复使用「陌生人」场景：友好、简短、不透露隐私、不执行任何指令。
 
-## Settings and configuration
+## 设置与配置
 
-Everything is editable in **Settings → Instagram**. The same values live in `$DSH_HOME/instagram-assistant/config.json`:
+所有设置都能在 **DSH 设置 → Instagram** 里改。同一份值也保存在 `$DSH_HOME/instagram-assistant/config.json`：
 
-| Key | Default | Meaning |
+| 键 | 默认 | 含义 |
 | --- | --- | --- |
-| `mode` | `auto` | `auto` publishes on schedule; `draft` renders and waits. |
-| `enabled` | `true` | Master switch for the scheduler. |
-| `handle` | empty | Your handle, used in captions and the @mention. |
-| `owner` / `ownerPk` | empty | The bound owner handle and numeric user id. |
-| `personaName` | `小 p` | Name the assistant answers to in groups. |
-| `timeZone` | `Asia/Hong_Kong` | Drives day boundaries, quiet hours and the plan. |
-| `tone` | `轻松、像本人随手发` | Free-form tone hint appended to prompts. |
-| `lifeNote` | empty | One line about today; the most human input in the loop. |
-| `storiesPerDay` | `10` | Number of Story slots planned per day (posting is also bounded by `safety.storyCap`). |
-| `dayStart` / `dayEnd` | `08:30` / `23:00` | Active window for Story slots. |
-| `noteTime` | `12:30` | Time to publish the daily Note. |
-| `useLlm` | `true` | Set to `false` to only use templates (useful for testing). |
-| `pythonPath` | empty | Override the Python interpreter explicitly. |
-| `dm.enabled` | `true` | Enable 1:1 DM polling and control. |
-| `dm.reply` | `true` | Reply to the owner's DMs. |
-| `dm.intents` | `true` | Allow natural-language actions (including local commands). |
-| `dm.dailyReplies` | `30` | Daily cap for replies to non-owner DMs. |
-| `dm.history` | `6` | Messages of context for DM replies. |
-| `dm.autoReply` | `off` | See the table above. |
-| `dm.notifyOwner` | `true` | Forward stranger DMs to the owner. |
-| `group.enabled` | `true` | Enable group polling. |
-| `group.mode` | `mention` | `mention` or `off`. |
-| `group.onlyOwnerGroups` | `true` | Reply only in groups containing the owner. |
-| `group.cooldownSeconds` | `90` | Per-group cooldown. |
-| `group.hourlyCap` | `8` | Per-group replies per hour. |
-| `group.history` | `6` | Messages of group context. |
-| `publish.story` / `publish.note` | `true` | Allow each kind to be published. |
-| `storyMention.enabled` | `true` | Attach the owner mention to every Story. |
-| `storyMention.x/y/width/height` | `0.5 / 0.86 / 0.5 / 0.09` | Sticker geometry as fractions of the image. |
-| `safety.paused` | `false` | Hard stop for publishing. |
-| `safety.storyCap` / `noteCap` | `10` / `1` | Per-kind daily caps. |
-| `safety.onePerKind` | `true` | Only one Note per day. |
-| `safety.minIntervalMinutes` | `30` | Minimum gap between any two published items. |
-| `safety.failureCooldownMinutes` | `120` | Cooldown after a **transient** failure. |
-| `safety.quietStart` / `quietEnd` | `23:00` / `08:00` | Quiet window. |
-| `safety.dryRun` | `false` | Render without actually publishing. |
+| `mode` | `auto` | `auto` 到点自动发；`draft` 只生成等确认。 |
+| `enabled` | `true` | 调度器总开关。 |
+| `handle` | 空 | 你的 handle，用于文案和 @。 |
+| `owner` / `ownerPk` | 空 | 绑定的主人 handle 和数字用户 id。 |
+| `personaName` | `小 p` | 群里叫它什么。 |
+| `timeZone` | `Asia/Hong_Kong` | 决定切日、安静时段和计划。 |
+| `tone` | `轻松、像本人随手发` | 附加到提示词里的语气提示。 |
+| `lifeNote` | 空 | 今天的一句话素材，整个循环里最「人」的输入。 |
+| `storiesPerDay` | `10` | 每天计划的 Story 条数（实际发布还受 `safety.storyCap` 限制）。 |
+| `dayStart` / `dayEnd` | `08:30` / `23:00` | Story 时间点的活跃窗口。 |
+| `noteTime` | `12:30` | 每天 Note 的发布时间。 |
+| `useLlm` | `true` | 设为 `false` 只用模板（适合测试）。 |
+| `pythonPath` | 空 | 显式指定 Python 解释器。 |
+| `dm.enabled` | `true` | 开启 1:1 私信轮询和控制。 |
+| `dm.reply` | `true` | 回复主人的私信。 |
+| `dm.intents` | `true` | 允许自然语言动作（包括本机命令）。 |
+| `dm.dailyReplies` | `30` | 每天回复非主人私信的上限。 |
+| `dm.history` | `6` | 私信回复带入的上下文条数。 |
+| `dm.autoReply` | `off` | 见上一张表。 |
+| `dm.notifyOwner` | `true` | 把别人的私信转告主人。 |
+| `group.enabled` | `true` | 开启群聊轮询。 |
+| `group.mode` | `mention` | `mention` 或 `off`。 |
+| `group.onlyOwnerGroups` | `true` | 只在主人所在的群回复。 |
+| `group.cooldownSeconds` | `90` | 每群冷却。 |
+| `group.hourlyCap` | `8` | 每群每小时回复上限。 |
+| `group.history` | `6` | 群聊上下文条数。 |
+| `publish.story` / `publish.note` | `true` | 允许发布对应类型。 |
+| `storyMention.enabled` | `true` | 每条 Story 都附上主人 @。 |
+| `storyMention.x/y/width/height` | `0.5 / 0.86 / 0.5 / 0.09` | 贴纸位置和大小占图片的比例。 |
+| `safety.paused` | `false` | 发布的硬停止。 |
+| `safety.storyCap` / `noteCap` | `10` / `1` | 按类型每日上限。 |
+| `safety.onePerKind` | `true` | 每天只发一条 Note。 |
+| `safety.minIntervalMinutes` | `30` | 任意两条已发布内容的最小间隔。 |
+| `safety.failureCooldownMinutes` | `120` | **瞬时**失败后的冷却。 |
+| `safety.quietStart` / `quietEnd` | `23:00` / `08:00` | 安静时段。 |
+| `safety.dryRun` | `false` | 只渲染、不真正发布。 |
 
-The safety valve is evaluated in this order: paused → transient-failure cooldown → per-kind cap → minimum interval → quiet hours. Only transient failures (network, timeout, rate limit, unknown) trigger the cooldown; a login/challenge error does not, so you can retry immediately after fixing it.
+安全阀的判定顺序是：暂停 → 瞬时失败冷却 → 按类型上限 → 最小间隔 → 安静时段。只有瞬时失败（网络、超时、限流、未知）会触发冷却；登录/人机验证这类错误不冷却，修好之后可以立刻重试。
 
-### Tools exposed to the model
+### 暴露给模型的工具
 
-| Tool | Purpose |
+| 工具 | 用途 |
 | --- | --- |
-| `ig_status` | Full state: mode, login, config, today's plan, counts, last error. |
-| `ig_stats(days)` | DSH focus/token statistics for the last N days (1–30). |
-| `ig_plan` | Today's Story/Note plan with times and kinds. |
-| `ig_draft(lifeNote)` | Generate the next Story preview and a Note draft without publishing. |
-| `ig_publish(kind, force)` | Publish the current draft (`story`, `note` or `all`); `force` skips the safety valve. |
-| `ig_run` | Run one scheduling round immediately. |
-| `ig_login(sessionid)` | Save an Instagram `sessionid` and validate it. |
-| `ig_persona(md, name, mood)` | Read or replace the persona card, name and mood. |
-| `ig_config(patch)` | Read or patch the configuration. |
+| `ig_status` | 完整状态：模式、登录、配置、今天的计划、计数、最近错误。 |
+| `ig_stats(days)` | 最近 N 天（1–30）的 DSH 专注和 token 统计。 |
+| `ig_plan` | 今天的 Story/Note 计划与时间。 |
+| `ig_draft(lifeNote)` | 生成下一条 Story 预览和 Note 草稿，不发布。 |
+| `ig_publish(kind, force)` | 发布当前草稿（`story`、`note` 或 `all`）；`force` 跳过安全阀。 |
+| `ig_run` | 立刻跑一轮调度。 |
+| `ig_login(sessionid)` | 保存并校验 Instagram `sessionid`。 |
+| `ig_persona(md, name, mood)` | 读取或替换人格卡、名字和心情。 |
+| `ig_config(patch)` | 读取或修改配置。 |
 
-## Data, privacy and cost
+## 数据、隐私与花费
 
-### What is read
+### 读取什么
 
-- `$DSH_HOME/sessions/**/session.v4.jsonl.zstd` — **timestamps only** of DSH session events, used to estimate focus time, streak and peak hours. Message content is not read.
-- `$DSH_HOME/.dshw-usage.json` — DSH's own token and cost ledger, for the stats card.
-- `$DSH_HOME/instagram-assistant/usage.json` — the assistant's own token/cost ledger.
+- `$DSH_HOME/sessions/**/session.v4.jsonl.zstd` —— 只读 DSH 会话事件的**时间戳**，用来估算专注、连续天数和活跃时段；不读消息内容。
+- `$DSH_HOME/.dshw-usage.json` —— DSH 自己的 token 和花费账本，用于数据卡。
+- `$DSH_HOME/instagram-assistant/usage.json` —— 助理自己的 token/花费账本。
 
-### What leaves the machine
+### 什么会离开本机
 
-- **Instagram** receives the images, captions and DMs you publish or send (private API).
-- **Your DSH model provider** receives the prompts: stats, persona card, mood, recent memories, life note, recent posts and (for replies) the incoming DM/group text.
-- Nothing is sent to the author or to any analytics service. There is no telemetry.
+- **Instagram** 会收到你发布或发送的图片、文案和私信（私有 API）。
+- **你的 DSH 模型服务**会收到提示词：统计、人格卡、心情、最近记忆、生活素材、最近发布记录，以及（回复时）对方发来的私信/群聊文本。
+- 不会发给作者，也没有任何统计或遥测。
 
-### Local files
+### 本机文件
 
 ```text
 $DSH_HOME/instagram-assistant/
-├── config.json       # plugin configuration
-├── persona.md        # the persona card (single source of truth)
-├── persona.json      # mood, memories, open threads
-├── posts.json        # publish history (last 400 items)
-├── usage.json        # model usage ledger for the assistant
-├── dm-state.json     # DM watermarks, pending drafts, notify throttles
-├── session.json      # Instagram login (SECRET)
-├── credential.json   # Instagram sessionid (SECRET)
-├── account.json      # cached account pk, username, avatar
-├── drafts/           # generated previews
-├── out/              # rendered Story cards
-├── log.txt           # runtime log
-└── install.log       # Python environment installation log
+├── config.json       # 插件配置
+├── persona.md        # 人格卡（唯一事实来源）
+├── persona.json      # 心情、记忆、未完成话题
+├── posts.json        # 发布记录（最近 400 条）
+├── usage.json        # 助理的模型用量账本
+├── dm-state.json     # 私信水位、待确认草稿、提醒节流
+├── session.json      # Instagram 登录态（机密）
+├── credential.json   # Instagram sessionid（机密）
+├── account.json      # 缓存的账号 pk、用户名、头像
+├── drafts/           # 生成的预览
+├── out/              # 渲染好的 Story 卡片
+├── log.txt           # 运行日志
+└── install.log       # Python 环境安装日志
 ```
 
-`session.json` and `credential.json` are live credentials. They are git-ignored and never uploaded anywhere by the plugin, but they are plain JSON on disk — protect the DSH home directory and never paste them into an issue.
+`session.json` 和 `credential.json` 是活的登录凭证。它们已被 git 忽略，插件也不会主动上传，但它们在磁盘上是明文 JSON —— 请保护好 DSH 家目录，不要把内容贴进 issue。
 
-### Cost
+### 花费
 
-- Every Story, Note, DM reply and intent parse is a DSH model call billed to your own account.
-- The settings page breaks down the assistant's own usage and estimates a CNY amount from a built-in price table (DeepSeek Flash / V4-Pro, peak and off-peak hours). It is an estimate: provider prices and peak-hour rules can change.
-- No extra subscription, proxy or third-party API key is needed.
+- 每条 Story、Note、私信回复和意图解析都是一次 DSH 模型调用，记在你自己的 DSH 账上。
+- 设置页会拆分助理自己的用量，并按内置价格表估算人民币金额（DeepSeek Flash / V4-Pro，峰谷分时）。这只是估算：官方价格和峰谷规则都可能变化。
+- 不需要额外订阅、代理或第三方 API key。
 
-## Risks and limitations
+## 风险与限制
 
-This is an automation tool that touches a real account and, optionally, a real machine. Read this before enabling auto mode.
+这是一个会碰真实账号、并且可选地碰真实机器的自动化工具。开启全自动之前请先读完这一节。
 
-1. **Unofficial Instagram API.** The plugin uses `instagrapi` (the private mobile API), not the official Graph API. Automated posting and messaging can violate Instagram's terms and can lead to rate limits, challenges, temporary blocks or **account loss**. Use an account you can afford to lose, keep volumes low, and prefer draft mode while testing.
-2. **Your usage becomes public.** Focus time, streak, weekly hours, token counts and your life note are baked into the image. Do not enable the stats card if that is sensitive. Token counts are not money, but they still describe your habits.
-3. **Owner DMs can execute code.** With `dm.intents` enabled, a message from the owner account can run a shell command or a `dsh headless` task. The confirmation step protects against the assistant acting on a misread; it does **not** protect against a hijacked Instagram account. Disable intents if you do not need this.
-4. **The persona is not a filter.** A model can write something inaccurate, tone-deaf or off-brand. Draft mode exists for a reason. You are responsible for what the account publishes.
-5. **Private API fragility.** Instagram changes endpoints without notice; a working version can break overnight. Login sessions expire and challenges require manual action in the app.
-6. **One account, images only.** No multi-account management, no Reels or video, no likes, follows, comments or story reactions. Stories are single images; the "text Story" is an image with text.
-7. **Chinese-first output.** The prompts and fallback templates are Chinese. Other languages need explicit persona instructions and testing.
-8. **Not affiliated.** This is an independent open-source project. "Instagram" and "Meta" are trademarks of Meta Platforms, Inc.; "DeepSeek" and "DeepSeek Harness" belong to their respective owners. The MIT license applies to this plugin's code only.
+1. **非官方 Instagram API。** 插件用的是 `instagrapi`（私有移动端 API），不是官方 Graph API。自动发帖和发消息可能违反 Instagram 条款，可能导致限流、人机验证、临时封禁甚至**丢号**。请用一个你输得起的账号，保持低频，测试期优先用草稿模式。
+2. **你的使用数据会公开。** 专注时长、连续天数、周累计、token 数和生活素材都会被画进图片。如果这些信息敏感，请不要开启数据卡。token 不是金额，但仍然能描述你的习惯。
+3. **主人的私信可以执行代码。** 开着 `dm.intents` 时，主人账号发来的一句话可以在这台机器上执行 shell 命令或 `dsh headless` 任务。确认步骤防的是「助理听错话」，**防不住 Instagram 账号被劫持**。不需要的话请关掉指令执行。
+4. **人格卡不是过滤器。** 模型仍可能写出不准确、不合时宜或不像你的内容。草稿模式就是为此存在的。账号发出去的内容由你负责。
+5. **私有 API 很脆。** Instagram 会不打招呼地改接口，今天能用的版本可能一夜之间失效。登录态会过期，人机验证需要你在 App 里手动完成。
+6. **单账号、只发图片。** 不支持多账号、Reels/视频、点赞、关注、评论或 Story 互动。Story 都是单张图片；「文字 Story」其实是带文字的图片。
+7. **中文优先输出。** 提示词和兜底模板都是中文。要写其他语言，需要在人格卡里明确要求并自行测试。
+8. **非官方关联。** 这是一个独立开源项目。「Instagram」和「Meta」是 Meta Platforms, Inc. 的商标；「DeepSeek」「DeepSeek Harness」归各自权利人所有。MIT 许可只覆盖本插件代码。
 
-## Troubleshooting
+## 常见问题
 
-| Symptom | What to check |
+| 现象 | 检查什么 |
 | --- | --- |
-| No **Instagram** item in Settings | The plugin did not activate. Check the DSH log for `failed to import`; a missing/invalid `index.js` aborts activation. Reinstall and restart DSH. |
-| Settings page says "读取失败：HTTP undefined" | Usually an old `client.js` that forgot to `await` a `fetch`. Update the plugin and hard-refresh the page. |
-| **Install dependencies** fails | Python 3.11+ missing or the Microsoft Store alias is intercepting `python`. Install Python from python.org, or set `pythonPath` / `DSH_INSTAGRAM_PYTHON`; check `install.log`. |
-| pip hangs at "Downloading wheel" | PyPI is unreachable. The installer retries the Tsinghua mirror automatically; if it still fails, check your proxy/VPN and rerun. |
-| "尚未登录" / `login_required` | `sessionid` expired or was copied incorrectly. Export a fresh one and log in again. |
-| Publish does nothing | The safety valve refused it. Check the reason in the log: paused, daily cap, minimum interval, quiet hours or failure cooldown. The UI shows the same reason. |
-| Clicks seem to be ignored after a failure | Login/challenge/card errors are not cooled down; transient network errors cool down for 120 minutes. Check `log.txt` for the code. |
-| `Invalid schema for function 'ig_config'` | A regression fixed in the 0.1.x line: tool parameters must be normalized by `textTool()`. Update to the latest build. |
-| `tool_addition blocks can only be in system messages` | The session accumulated too many tool-registry events after repeated plugin reloads. Start a **new** DSH session; do not toggle the plugin mid-conversation. |
-| `spawn EPERM` / child process errors on Windows | The DSH sandbox is blocking process creation. Run DSH outside the restricted sandbox, or whitelist the Python interpreter and shell. |
-| A Story slot was skipped | Slots more than 90 minutes late are marked `missed` and never backfilled, to avoid a burst of stale posts. |
-| Instagram challenge / checkpoint | Complete it manually in the Instagram app or web UI. The plugin will not and cannot bypass it. |
+| 设置里没有 **Instagram** | 插件没有激活。在 DSH 日志里搜 `failed to import`；`index.js` 无效会让整条插件不激活。重装并重启 DSH。 |
+| 设置页报「读取失败：HTTP undefined」 | 通常是旧版 `client.js` 漏了 `await fetch`。更新插件并强制刷新页面。 |
+| **安装依赖**失败 | 没有 Python 3.11+，或 Microsoft Store 的 `python` 别名把解释器拦住了。从 python.org 安装，或设置 `pythonPath` / `DSH_INSTAGRAM_PYTHON`；查看 `install.log`。 |
+| pip 卡在 Downloading wheel | PyPI 不通。安装器会自动重试清华镜像；仍失败就检查代理/VPN 再重跑。 |
+| 「尚未登录」/ `login_required` | `sessionid` 过期或复制不完整。重新导出并登录。 |
+| 点发布没反应 | 安全阀拒绝了。看日志里的原因：暂停、当日上限、最小间隔、安静时段或失败冷却。设置页也会显示同样的原因。 |
+| 失败后好像点不动了 | 登录/人机验证/卡片错误不会冷却；瞬时网络错误会冷却 120 分钟。去 `log.txt` 看具体 code。 |
+| `Invalid schema for function 'ig_config'` | 0.1.x 早期版本的回归：工具参数必须经过 `textTool()` 归一化。更新到最新版本。 |
+| `tool_addition blocks can only be in system messages` | 反复重载插件让当前会话攒了太多工具注册事件。**开一个新会话**；不要在聊天中途反复禁用/启用插件。 |
+| Windows 上 `spawn EPERM` / 子进程报错 | DSH 沙箱阻止了创建进程。把 DSH 移出受限沙箱，或放行 Python 解释器和 shell。 |
+| 某个 Story 时间点被跳过 | 晚于时间点 90 分钟就会标记 `missed`，不补发，避免积压刷屏。 |
+| Instagram 人机验证 / checkpoint | 在 Instagram App 或网页里手动完成。插件不会也无法绕过。 |
 
-Logs are always at `$DSH_HOME/instagram-assistant/log.txt`; the last lines are also shown in Settings.
+日志固定在 `$DSH_HOME/instagram-assistant/log.txt`，设置页也会显示最后几行。
 
-## Development
+## 开发
 
-### Layout
+### 目录
 
 ```text
-index.js                 # host plugin: config, scheduler, HTTP routes, tools
-client.js                # settings page (non-ESM, window.__ModuleLoader__)
-lib/                     # pure logic with unit tests
-  actions.mjs            # fixed action list + intent parsing
-  commands.mjs           # short commands, owner/group decision rules
-  content.mjs            # prompts, captions, card specs
-  dshusage.mjs           # DSH session/usage parsing
-  features.mjs           # auto-reply modes, notify throttle, publish switches
-  persona.mjs            # persona card, memories, group prompts
-  plan.mjs               # deterministic daily plan
-  pricing.mjs            # token price table + peak hours
-  safety.mjs             # publish safety valve
-  singleflight.mjs       # one-at-a-time DM poll
-  spend.mjs              # assistant usage ledger
-  unread.mjs             # unread DM picking rules
-  usage.mjs              # activity blocks, day boundaries, streak
-test/                    # 109 unit tests, run in-process
+index.js                 # Host 插件：配置、调度、HTTP 路由、工具
+client.js                # 设置页（非 ESM，window.__ModuleLoader__）
+lib/                     # 纯逻辑 + 单测
+  actions.mjs            # 固定动作清单 + 意图解析
+  commands.mjs           # 短指令、主人/群聊判定
+  content.mjs            # 提示词、文案、卡片 spec
+  dshusage.mjs           # DSH 会话/用量解析
+  features.mjs           # 自动回复档位、提醒节流、发布开关
+  persona.mjs            # 人格卡、记忆、群聊提示词
+  plan.mjs               # 确定性每日计划
+  pricing.mjs            # token 价格表 + 峰谷时段
+  safety.mjs             # 发布安全阀
+  singleflight.mjs       # 私信轮询单飞闸
+  spend.mjs              # 助理用量账本
+  unread.mjs             # 未读私信挑选规则
+  usage.mjs              # 活动块、切日、连续天数
+test/                    # 109 个单测，进程内运行
 vendor/instagram-mcp/
-  ig_cli.py              # Instagram private-API bridge
-  render_card.py         # Pillow card renderer
-docs/research/           # DSH host/client plugin contract notes
+  ig_cli.py              # Instagram 私有 API 桥
+  render_card.py         # Pillow 卡片渲染器
+docs/research/           # DSH Host/Client 插件契约笔记
 ```
 
-There is no build step. DSH loads the files directly.
+没有构建步骤，DSH 直接加载这些文件。
 
-### Test
+### 测试
 
 ```bash
 node test/run.mjs
 ```
 
-`node test/run.mjs` imports every test file in one process; this avoids `spawn EPERM` inside sandboxed Windows environments. It covers time-zone day boundaries, activity-block merging, streak/week aggregation, prompt lengths, card specs, the safety valve, deterministic plans, persona parsing, DM command decisions (owner id only), group rules, tool schema normalization, the client static contract, session parsing and usage accounting.
+`node test/run.mjs` 在一个进程里 import 所有测试文件，避开 Windows 沙箱里 `node --test` 会遇到的 `spawn EPERM`。覆盖：时区切日、活动块合并、周累计/连续天数、提示词长度、卡片 spec、安全阀、确定性计划、人格解析、私信指令判定（只认主人 id）、群聊规则、工具 schema 归一化、client 静态契约、会话解析和用量计算。
 
-A quick manual check of the statistics pipeline:
+快速手查统计管线：
 
 ```bash
 node -e "import('./lib/dshusage.mjs').then(m => console.log(m.buildStats({ home: process.env.DSH_HOME })))"
 ```
 
-### Development loop
+### 开发循环
 
-- `client.js` changes: rebuild/reload the client bundle and refresh the page.
-- `index.js` changes: restart DSH. ESM modules are cached for the life of the host process.
-- Avoid disabling/enabling the plugin during a live conversation: every tool add/remove persists a `tool-addition`/`tool-removal` developer message in the session. After many reloads the Messages API starts rejecting the session with `messages.N: tool_addition blocks can only be in system messages`. Start a new session after host changes.
-- No `@deepseek-ai/*` imports: the desktop profile has `autoInstallPeers:false` and an empty `DSH_HOST_MODULES`, so a bare import makes the whole plugin silently fail to activate.
-- Host ↔ client communication uses HTTP routes only (`/api/deepseek-instagram`), never custom RPC.
-- Tool definitions must go through `textTool()` so the provider sees `parameters.type === "object"`.
+- 改 `client.js`：重新构建/加载 client bundle，然后刷新页面。
+- 改 `index.js`：重启 DSH。ESM 模块在 Host 进程生命周期内会被缓存。
+- 不要在用户正在聊天时禁用/启用插件：每次增删工具都会在会话里留下一条 `tool-addition`/`tool-removal` 开发者消息。攒多了以后 Messages API 会整条拒绝：`messages.N: tool_addition blocks can only be in system messages`。改完 Host 代码请开新会话。
+- 不要 `import '@deepseek-ai/*'`：桌面 profile 是 `autoInstallPeers:false` 且 `DSH_HOST_MODULES` 为空，裸 import 会让整条插件静默不激活。
+- Host ↔ Client 只走 HTTP 路由（`/api/deepseek-instagram`），没有自定义 RPC。
+- 工具定义必须经过 `textTool()`，这样 provider 看到的 `parameters.type` 才是 `"object"`。
 
-### Python environment (for development)
+### Python 环境（开发用）
 
 ```powershell
 python -m venv --without-pip .venv
@@ -432,21 +432,21 @@ python -m venv --without-pip .venv
 echo '{}' | .venv\Scripts\python.exe vendor\instagram-mcp\ig_cli.py doctor
 ```
 
-## Publishing to the DSH plugin marketplace
+## 发布到 DSH 插件市场
 
-- Package name: `deepseek-instagram`; license MIT; repository `https://github.com/Ez4p1xEL/deepseek-instagram`.
-- Add the `dsh-plugin` topic to the GitHub repository.
-- Publish to npm (`npm pack --dry-run`, then `npm publish`) if the in-app DSH plugin center should be able to install it from inside the app.
-- Submit the repository at <https://dsh-plugin.org/submit> using the issue template:
+- 包名：`deepseek-instagram`；MIT 许可；仓库 `https://github.com/Ez4p1xEL/deepseek-instagram`。
+- 给 GitHub 仓库加上 `dsh-plugin` topic。
+- 如果希望 App 内的 DSH 插件中心能直接安装，请发布到 npm（先 `npm pack --dry-run`，再 `npm publish`）。
+- 在 <https://dsh-plugin.org/submit> 用 issue 模板提交：
   `[插件提交] Ez4p1xEL/deepseek-instagram — 让 DSH 助理住进 Instagram`
-- After the listing exists, the badge can be added to the top of this README:
+- 收录之后，可以把徽标加到 README 顶部：
 
 ```markdown
 [![Listed on dsh-plugin.org](https://dsh-plugin.org/badges/listed.svg)](https://dsh-plugin.org/plugins/Ez4p1xEL/deepseek-instagram)
 ```
 
-## License
+## 许可
 
 [MIT](LICENSE) © 2026 Ez4p1xEL
 
-This project is not affiliated with, endorsed by or sponsored by Meta Platforms, Inc., Instagram or DeepSeek. Use it at your own risk, and follow the terms of the services you automate.
+本项目与 Meta Platforms, Inc.、Instagram、DeepSeek 没有关联，也未获得其背书或赞助。使用风险自负，并请遵守你所自动化服务的使用条款。
