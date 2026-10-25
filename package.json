@@ -1,0 +1,34 @@
+{
+  "name": "deepseek-instagram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DSH 插件：把 Instagram 变成你的 AI 助理 —— 自动发 Story / Note，分享 DSH 使用日常",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "node test/run.mjs",
+    "probe": "node scripts/probe_shape.mjs"
+  },
+  "engines": {
+    "dsh": ">=0.1.7-rc.1",
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ]
+    }
+  }
+}

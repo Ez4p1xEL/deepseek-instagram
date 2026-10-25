@@ -1,0 +1,11 @@
+# deepseek-instagram 自带的挂载声明。
+# 装进 profile 之后，DSH 会把 dsh.profile.bundles 里这个包名的 patch 叠进配置树，
+# 于是出现了 id=deepseek-instagram 的 loader 行 → Host 侧 index.js 的 apply() 被执行。
+#
+# 真正的用户配置存在插件家目录（$DSH_HOME/instagram-assistant/config.json），
+# 设置页改的就是它；这里只放默认值。
+- insert:
+    - id: deepseek-instagram
+      name: deepseek-instagram
+      config:
+        enabled: true

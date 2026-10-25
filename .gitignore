@@ -1,0 +1,44 @@
+# 依赖 / 虚拟环境
+node_modules/
+.venv*/
+__pycache__/
+*.pyc
+
+# 运行产物：卡片、预览、临时文件、日志
+out/
+.tmp*/
+*.log
+*.tmp-spec.json
+
+# ── 隐私 / 凭证：绝对不要提交 ──────────────────────────────
+# Instagram 会话凭证（sessionid 落地在 session.json，cookie 在 credential.json）
+session.json
+credential.json
+credential*.json
+cookies*.json
+sessionid*.json
+*.cookie
+*.session
+
+# 通用密钥 / 环境变量
+.env
+.env.*
+secrets*.json
+*.key
+*.pem
+
+# 插件运行时状态：可能含私信原文、人格记忆、用量与配置
+config.json
+dm-state.json
+persona.json
+persona.md
+usage.json
+log.txt
+
+# 系统 / 编辑器垃圾
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,235 @@
+
+==============================================================================
+1. 版本与环境
+==============================================================================
+instagrapi.__version__ = 3.2.0
+instagrapi.__file__    = D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\__init__.py
+python                 = 3.12.3
+dist version           = 3.2.0
+dist location          = D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages
+
+==============================================================================
+2. Client 构造函数与 transport 默认值
+==============================================================================
+class Client.__init__(self, settings: Optional[dict] = None, proxy: Optional[str] = None, delay_range: Optional[list] = None, logger=<Logger instagrapi (WARNING)>, override_app_version: bool = False, **kwargs)
+Client() 可调用签名: (settings: Optional[dict] = None, proxy: Optional[str] = None, delay_range: Optional[list] = None, logger=<Logger instagrapi (WARNING)>, override_app_version: bool = False, **kwargs)
+Client.public_transport  (类默认) = 'requests'
+Client.private_transport (类默认) = 'curl'
+Client.public_transport_impersonate = 'chrome136'
+
+关键 kwargs 探测（只构造对象，不联网）:
+  Client(**{'device': {}}) -> TypeError: LoginMixin.__init__() got an unexpected keyword argument 'device'
+  Client(**{'user_agent': 'x'}) -> TypeError: LoginMixin.__init__() got an unexpected keyword argument 'user_agent'
+  Client(**{'settings': {}}) -> OK (Client)
+  Client(**{'private_transport': 'requests'}) -> OK (Client)
+
+==============================================================================
+3. 指定方法的完整签名（inspect 原始输出）
+==============================================================================
+def login_by_sessionid(self, sessionid: str) -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def login(self, username: Optional[str] = None, password: Optional[str] = None, relogin: bool = False, verification_code: str = '') -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def get_settings(self) -> Dict
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def set_settings(self, settings: Dict) -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def load_settings(self, path: Union[str, pathlib.Path], override_app_version: bool = False) -> Dict
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def dump_settings(self, path: Union[str, pathlib.Path]) -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def set_device(self, device: Dict = None, reset: bool = False, hydrate_app_profile: bool = False) -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def photo_upload_to_story(self, path: pathlib.Path, caption: str = '', upload_id: str = '', mentions: List[instagrapi.types.StoryMention] = [], locations: List[instagrapi.types.StoryLocation] = [], links: List[instagrapi.types.StoryLink] = [], hashtags: List[instagrapi.types.StoryHashtag] = [], stickers: List[instagrapi.types.StorySticker] = [], medias: List[instagrapi.types.StoryMedia] = [], polls: List[instagrapi.types.StoryPoll] = [], extra_data: Dict[str, str] = {}, resize_mode: Literal['fill', 'fit'] = 'fill') -> instagrapi.types.Story
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\photo.py
+def video_upload_to_story(self, path: pathlib.Path, caption: str = '', thumbnail: pathlib.Path = None, mentions: List[instagrapi.types.StoryMention] = [], locations: List[instagrapi.types.StoryLocation] = [], links: List[instagrapi.types.StoryLink] = [], hashtags: List[instagrapi.types.StoryHashtag] = [], stickers: List[instagrapi.types.StorySticker] = [], medias: List[instagrapi.types.StoryMedia] = [], polls: List[instagrapi.types.StoryPoll] = [], extra_data: Dict[str, str] = {}, resize_mode: Literal['fill', 'fit'] = 'fill') -> instagrapi.types.Story
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\video.py
+def get_timeline_feed(self, reason: Literal['cold_start_fetch', 'warm_start_fetch', 'pagination', 'pull_to_refresh', 'auto_refresh'] = 'pull_to_refresh', max_id: str = None, seen_posts: Union[str, Iterable[str], NoneType] = None, feed_view_info: Union[str, List[Dict[str, Any]], NoneType] = None) -> Dict
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+def user_info(self, user_id: str, use_cache: bool = True) -> instagrapi.types.User
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\user.py
+def account_info(self) -> instagrapi.types.Account
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\account.py
+[MISSING] Client.get_current_user  <-- 该方法不存在
+def logout(self) -> bool
+    # source: D:\Space\Workspace\deepseek-instagram\.venv-api\Lib\site-packages\instagrapi\mixins\auth.py
+
+==============================================================================
+4. note 相关方法（note_create 存在吗？）
+==============================================================================
+note_create 是否存在: False
+含 'note' 的可调用成员共 14 个:
+  def _note_audience_value(audience: instagrapi.mixins.note.NoteAudience) -> int
+  def _note_dict_from_create_inbox_tray_item(result: Dict) -> Dict
+  def _note_dict_from_inbox_tray_item(item: Dict) -> Dict
+  def _note_from_note_dict(data: Dict) -> instagrapi.types.Note
+  def create_music_note(self, track: Union[instagrapi.types.Track, Dict], text: str = '', audience: instagrapi.mixins.note.NoteAudience = <NoteAudience.MUTUAL_FOLLOWERS: 0>, start_time: Optional[int] = None, duration: int = 30000, browse_session_id: Optional[str] = None, alacorn_session_id: Optional[str] = None) -> instagrapi.types.Note
+  def create_note(self, text: str, audience: instagrapi.mixins.note.NoteAudience = <NoteAudience.MUTUAL_FOLLOWERS: 0>) -> instagrapi.types.Note
+  def delete_note(self, note_id: int) -> bool
+  def get_note_by_user(self, notes: List[instagrapi.types.Note], username: str) -> Optional[instagrapi.types.Note]
+  def get_note_text_by_user(self, notes: List[instagrapi.types.Note], username: str) -> Optional[str]
+  def get_notes(self) -> List[instagrapi.types.Note]
+  def last_seen_update_note(self) -> bool
+  def media_note_create(self, media_id: str, text: str = '', audience: int = 7, note_style: int = 13, extra_data: Optional[Dict] = None) -> Dict
+  def media_note_delete(self, note_id: str, extra_data: Optional[Dict] = None) -> bool
+  def notes_music_browser(self) -> Dict
+
+==============================================================================
+5. NoteAudience / 返回类型字段
+==============================================================================
+from instagrapi.mixins.note import NoteAudience -> <enum 'NoteAudience'>
+  members = [('MUTUAL_FOLLOWERS', 0), ('CLOSE_FRIENDS', 1)]
+  instagrapi.NoteAudience 顶层导出? False
+
+Note.model_fields (10):
+  - id: str = PydanticUndefined
+  - text: str = PydanticUndefined
+  - user_id: str = PydanticUndefined
+  - user: UserShort = PydanticUndefined
+  - audience: int = PydanticUndefined
+  - created_at: datetime = PydanticUndefined
+  - expires_at: datetime = PydanticUndefined
+  - is_emoji_only: bool = PydanticUndefined
+  - has_translation: bool = PydanticUndefined
+  - note_style: int = PydanticUndefined
+
+Story.model_fields (20):
+  - pk: str = PydanticUndefined
+  - id: str = PydanticUndefined
+  - code: str = PydanticUndefined
+  - taken_at: datetime = PydanticUndefined
+  - imported_taken_at: Optional = None
+  - media_type: int = PydanticUndefined
+  - product_type: Optional = ''
+  - thumbnail_url: Optional = None
+  - user: UserShort = PydanticUndefined
+  - video_url: Optional = None
+  - video_duration: Optional = 0.0
+  - sponsor_tags: List = PydanticUndefined
+  - is_paid_partnership: Optional = False
+  - mentions: List = PydanticUndefined
+  - links: List = PydanticUndefined
+  - hashtags: List = PydanticUndefined
+  - locations: List = PydanticUndefined
+  - stickers: List = PydanticUndefined
+  - medias: List = []
+  - polls: List = []
+
+Account.model_fields (13):
+  - pk: str = PydanticUndefined
+  - username: str = PydanticUndefined
+  - full_name: str = PydanticUndefined
+  - is_private: bool = PydanticUndefined
+  - profile_pic_url: HttpUrl = PydanticUndefined
+  - is_verified: bool = PydanticUndefined
+  - biography: Optional = ''
+  - external_url: Optional = None
+  - is_business: bool = PydanticUndefined
+  - birthday: Optional = None
+  - phone_number: Optional = None
+  - gender: Optional = None
+  - email: Optional = None
+
+==============================================================================
+6. 异常类清单与继承关系
+==============================================================================
+ClientError: ClientError <- Exception <- BaseException <- object
+ClientUnknownError: ClientUnknownError <- ClientError <- Exception <- BaseException <- object
+ClientLoginRequired: ClientLoginRequired <- ClientError <- Exception <- BaseException <- object
+ClientConnectionError: ClientConnectionError <- ClientError <- Exception <- BaseException <- object
+ClientBadRequestError: ClientBadRequestError <- ClientError <- Exception <- BaseException <- object
+ClientUnauthorizedError: ClientUnauthorizedError <- ClientError <- Exception <- BaseException <- object
+ClientForbiddenError: ClientForbiddenError <- ClientError <- Exception <- BaseException <- object
+ClientNotFoundError: ClientNotFoundError <- ClientError <- Exception <- BaseException <- object
+ClientThrottledError: ClientThrottledError <- ClientError <- Exception <- BaseException <- object
+ClientRequestTimeout: ClientRequestTimeout <- ClientError <- Exception <- BaseException <- object
+ClientJSONDecodeError: ClientJSONDecodeError <- ClientError <- Exception <- BaseException <- object
+ClientGraphqlError: ClientGraphqlError <- ClientError <- Exception <- BaseException <- object
+PrivateError: PrivateError <- ClientError <- Exception <- BaseException <- object
+LoginRequired: LoginRequired <- PrivateError <- ClientError <- Exception <- BaseException <- object
+ChallengeError: ChallengeError <- PrivateError <- ClientError <- Exception <- BaseException <- object
+ChallengeRequired: ChallengeRequired <- ChallengeError <- PrivateError <- ClientError <- Exception <- BaseException
+ChallengeRedirection: ChallengeRedirection <- ChallengeError <- PrivateError <- ClientError <- Exception <- BaseException
+ChallengeSelfieCaptcha: ChallengeSelfieCaptcha <- ChallengeError <- PrivateError <- ClientError <- Exception <- BaseException
+ChallengeUnknownStep: ChallengeUnknownStep <- ChallengeError <- PrivateError <- ClientError <- Exception <- BaseException
+AccountSuspended: AccountSuspended <- ClientError <- Exception <- BaseException <- object
+TwoFactorRequired: TwoFactorRequired <- PrivateError <- ClientError <- Exception <- BaseException <- object
+RateLimitError: RateLimitError <- PrivateError <- ClientError <- Exception <- BaseException <- object
+PleaseWaitFewMinutes: PleaseWaitFewMinutes <- PrivateError <- ClientError <- Exception <- BaseException <- object
+FeedbackRequired: FeedbackRequired <- PrivateError <- ClientError <- Exception <- BaseException <- object
+SentryBlock: SentryBlock <- PrivateError <- ClientError <- Exception <- BaseException <- object
+ProxyAddressIsBlocked: ProxyAddressIsBlocked <- PrivateError <- ClientError <- Exception <- BaseException <- object
+BadPassword: BadPassword <- PrivateError <- ClientError <- Exception <- BaseException <- object
+BadCredentials: BadCredentials <- PrivateError <- ClientError <- Exception <- BaseException <- object
+ReloginAttemptExceeded: ReloginAttemptExceeded <- ClientError <- Exception <- BaseException <- object
+UnknownError: UnknownError <- PrivateError <- ClientError <- Exception <- BaseException <- object
+ClientNeedsUpgradeError: ClientNeedsUpgradeError <- UnknownError <- PrivateError <- ClientError <- Exception <- BaseException
+PhotoNotUpload: PhotoNotUpload <- PrivateError <- ClientError <- Exception <- BaseException <- object
+PhotoConfigureError: PhotoConfigureError <- PhotoNotUpload <- PrivateError <- ClientError <- Exception <- BaseException
+PhotoConfigureStoryError: PhotoConfigureStoryError <- PhotoConfigureError <- PhotoNotUpload <- PrivateError <- ClientError <- Exception
+VideoNotUpload: VideoNotUpload <- PrivateError <- ClientError <- Exception <- BaseException <- object
+VideoConfigureError: VideoConfigureError <- VideoNotUpload <- PrivateError <- ClientError <- Exception <- BaseException
+VideoConfigureStoryError: VideoConfigureStoryError <- VideoConfigureError <- VideoNotUpload <- PrivateError <- ClientError <- Exception
+NoteNotFound: NoteNotFound <- NotFoundError <- PrivateError <- ClientError <- Exception <- BaseException
+MediaNotFound: MediaNotFound <- NotFoundError <- MediaError <- PrivateError <- ClientError <- Exception
+StoryNotFound: StoryNotFound <- NotFoundError <- MediaError <- PrivateError <- ClientError <- Exception
+UserNotFound: UserNotFound <- NotFoundError <- UserError <- PrivateError <- ClientError <- Exception
+ValidationError: ValidationError <- AssertionError <- Exception <- BaseException <- object
+CaptchaChallengeRequired: CaptchaChallengeRequired <- ClientError <- Exception <- BaseException <- object
+DirectMessageRequestsDisabled: DirectMessageRequestsDisabled <- DirectError <- PrivateError <- ClientError <- Exception <- BaseException
+
+==============================================================================
+7. 未登录状态下 get_settings() 的持久化字段（真实输出）
+==============================================================================
+  uuids: dict[7] -> phone_id, uuid, client_session_id, advertising_id, android_device_id, request_id, tray_session_id
+  mid: NoneType = None
+  ig_u_rur: NoneType = None
+  ig_www_claim: NoneType = None
+  authorization_data: dict[0] -> 
+  cookies: dict[0] -> 
+  last_login: NoneType = None
+  device_settings: dict[11] -> android_version, android_release, dpi, resolution, manufacturer, device, model, cpu, app_version, version_code, bloks_versioning_id
+  user_agent: str = 'Instagram 449.0.0.52.84 Android (34/14; 480dpi; 1344x2992; Google/google; Pixel 8 Pro; husky; husky; en_US; 1079242191)'
+  country: str = 'US'
+  country_code: int = 1
+  locale: str = 'en_US'
+  timezone_offset: int = -14400
+  timezone_name: str = 'GMT-04:00'
+  push_disabled: bool = True
+  request_timeout: int = 1
+  public_request_retries_count: int = 3
+  public_request_retries_timeout: int = 2
+  session_retry_total: int = 3
+  session_retry_backoff_factor: int = 2
+  session_retry_statuses: list = [429, 500, 502, 503, 504]
+  public_transport: str = 'requests'
+  public_user_agent: str = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15'
+  public_graphql_user_agent: str = 'Instagram 273.0.0.16.70 (iPhone15,2; iOS 17_5_1; en_US; en-US; scale=3.00; 1290x2796; 470085518)'
+  private_transport: str = 'curl'
+  public_transport_impersonate: str = 'chrome136'
+  tls_verify: bool = True
+
+  user_id (未登录) = None
+  sessionid 属性存在? True
+  account_info 存在? True；get_current_user 存在? False
+
+==============================================================================
+8. 离线持久化往返（不联网：验证 set_settings 能否替代再次 login）
+==============================================================================
+  Client() 未登录: user_id=None  sessionid=None
+  set_settings 之后: user_id=1234567890  sessionid='1234567890%3AAbCdEfGhIjKl%3A12x'
+    private cookies      = {'sessionid': '1234567890%3AAbCdEfGhIjKl%3A12x', 'ds_user_id': '1234567890'}
+    private.headers 有 Authorization? True
+    c1.device            = {'android_version': 34, 'android_release': '14', 'manufacturer': 'Google', 'model': 'Pixel 8 Pro'}
+  dump_settings -> C:\Users\Ez4p1\AppData\Local\Temp\dsh-3N178a\ig_probe_settings.json（27 个键，cookies 键 = ['sessionid', 'ds_user_id']）
+  load_settings 到新 Client: user_id=1234567890  sessionid 一致? True
+  Client(settings=dict) 直传: user_id=1234567890  sessionid 一致? True
+
+==============================================================================
+9. 结论速览（由上面真实输出推导）
+==============================================================================
+- Client.__init__ 只认 settings/proxy/delay_range/logger/override_app_version，
+  其余 kwarg 会一路透传到 LoginMixin.__init__(self) 而抛 TypeError（见第 2 节探测）。
+- Note 的创建方法是 create_note / create_music_note；没有 note_create。
+- Story 上传用 photo_upload_to_story(path, caption, ...)，内部再做 photo_configure_to_story。
+- 会话持久化靠 get_settings()/set_settings() 这一对；cookies + authorization_data 是核心。
