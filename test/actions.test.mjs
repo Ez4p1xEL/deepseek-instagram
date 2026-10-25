@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ACTIONS, keywordAction, parseIntent, intentPrompt, confirmWord, cancelWord, needsConfirm,
+  ACTIONS, COMPUTER_ACTIONS, keywordAction, parseIntent, intentPrompt, confirmWord, cancelWord, needsConfirm,
 } from '../lib/actions.mjs';
 
 // 用户原话（2026-10-25）：发「回复一下你未读的私信内容」，助理当成闲聊回了
@@ -74,4 +74,14 @@ test('intent prompt lists every action and the JSON contract', () => {
   assert.match(prompt.user, /回复一下你未读的私信内容/);
   assert.match(prompt.user, /"action"/);
   assert.match(prompt.system, /JSON/);
+});
+
+// 「完全权限」只可能放开这两类：在本机跑命令 / 让本机 DSH 干活。
+test('COMPUTER_ACTIONS 只含让电脑干活的两类，且都是危险动作', () => {
+  assert.deepEqual([...COMPUTER_ACTIONS], ['run_command', 'dsh_task']);
+  for (const name of COMPUTER_ACTIONS) {
+    assert.equal(ACTIONS[name].dangerous, true, `${name} should be dangerous`);
+    assert.equal(needsConfirm(name), true, `${name} should need confirmation`);
+  }
+  assert.equal(COMPUTER_ACTIONS.includes('reply_unread'), false);
 });

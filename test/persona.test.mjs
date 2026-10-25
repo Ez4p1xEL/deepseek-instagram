@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   loadPersona, parseReply, remember, savePersona, setMood, systemPrompt, storyBrief, noteBrief, recentMemories,
-  loadPersonaMd, savePersonaMd, parsePersonaMd, groupPrompt, PERSONA_MD_DEFAULT,
+  loadPersonaMd, savePersonaMd, parsePersonaMd, groupPrompt, PERSONA_MD_DEFAULT, applyPersonaPatch,
 } from '../lib/persona.mjs';
 
 const cfg = { owner: 'ez4p1xel', username: 'imnotp1xel', assistantName: '小 p' };
@@ -183,6 +183,31 @@ test('stranger scene never leaks the owner private data and refuses commitments'
   assert.doesNotMatch(system, /对方就是主人本人/);
   assert.match(user, /你主人是谁呀/);
   assert.match(user, /刚收到的一条/);
+});
+
+// 2026-10-26 实测：设置页改「名字」后保存，名字总被旧名字盖回去 —— 因为心情补丁用的是
+// `Object.assign(next, setMood(旧persona, mood))`，把旧 persona 的 name/identity 一起赋回来了。
+test('applyPersonaPatch: 改名字不会被心情补丁覆盖', () => {
+  const base = {
+    version: 1, name: '小 p', identity: 'id-原样',
+    mood: { label: '平静', note: '', at: 1 }, memories: [], threads: [],
+  };
+  const next = applyPersonaPatch(base, { name: '  小 P  ', mood: { label: '困' } });
+  assert.equal(next.name, '小 P');
+  assert.equal(next.mood.label, '困');
+  assert.equal(next.identity, 'id-原样');
+  assert.equal(next.memories, base.memories);
+  assert.equal(base.name, '小 p', '不得改原对象');
+});
+
+test('applyPersonaPatch: 接受字符串心情、空名字忽略、长度上限', () => {
+  const base = { name: '小 p', identity: 'id', mood: { label: '平静', note: 'a', at: 1 }, memories: [], threads: [] };
+  const next = applyPersonaPatch(base, { name: '', mood: '开心' });
+  assert.equal(next.name, '小 p');
+  assert.equal(next.mood.label, '开心');
+  const long = applyPersonaPatch(base, { name: 'x'.repeat(30), identity: 'y'.repeat(200) });
+  assert.equal(long.name.length, 20);
+  assert.equal(long.identity.length, 120);
 });
 
 test('empty incoming falls back to answering the last line instead of an empty prompt', () => {

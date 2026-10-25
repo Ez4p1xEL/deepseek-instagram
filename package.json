@@ -1,6 +1,6 @@
 {
   "name": "deepseek-instagram",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A resident Instagram assistant for DeepSeek Harness — persona-driven Stories and Notes from your DSH usage, controlled only by the owner's DMs.",
   "type": "module",
   "main": "index.js",
@@ -13,6 +13,7 @@
     "index.js",
     "client.js",
     "cordis.patch.yml",
+    "CHANGELOG.md",
     "lib/",
     "vendor/instagram-mcp/ig_cli.py",
     "vendor/instagram-mcp/render_card.py"

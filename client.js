@@ -103,7 +103,7 @@ window.__ModuleLoader__.load({
     }
 
     // 用量卡片里各类调用的中文名（Host 侧 recordSpend 的 kind）
-    const SPEND_KINDS = { story: 'Story', note: 'Note', dm: '私信', group: '群聊', stranger: '陌生人', intent: '指令识别', other: '其他' };
+    const SPEND_KINDS = { story: 'Story', note: 'Note', dm: '私信', group: '群聊', stranger: '陌生人', intent: '指令识别', share: '分享', other: '其他' };
 
     function Panel() {
       const [st, setSt] = React.useState(null);
@@ -140,10 +140,14 @@ window.__ModuleLoader__.load({
           autoReply: next.cfg.dm?.autoReply || 'off',
           notifyOwner: next.cfg.dm?.notifyOwner !== false,
           remoteControl: next.cfg.dm?.intents !== false,
+          readShares: next.cfg.dm?.readShares !== false,
+          shareOpinion: next.cfg.dm?.shareOpinion !== false,
+          dmCooldownS: next.cfg.dm?.cooldownSeconds ?? 30,
+          fullAccess: next.cfg.dm?.fullAccess === true,
           publishStory: next.cfg.publish?.story !== false,
           publishNote: next.cfg.publish?.note !== false,
           personaName: next.persona?.name || '',
-          personaMood: next.persona?.mood || '',
+          personaMood: next.persona?.mood?.label || '',
           personaIdentity: next.persona?.identity || '',
           groupEnabled: next.cfg.group?.enabled !== false,
           groupMode: next.cfg.group?.mode || 'mention',
@@ -205,44 +209,78 @@ window.__ModuleLoader__.load({
         } finally { setBusy(''); }
       };
 
-      const save = () => act('save', () => jpost('/config', {
-        mode: form.mode, tone: form.tone, handle: form.handle, lifeNote: form.lifeNote,
-        noteTime: form.noteTime, useLlm: form.useLlm, enabled: form.enabled,
-        storiesPerDay: Number(form.storiesPerDay) || 10,
-        dayStart: form.dayStart, dayEnd: form.dayEnd,
-        owner: form.owner,
-        dm: {
-          enabled: form.dmEnabled, dailyReplies: Number(form.dmReply) || 30,
-          autoReply: form.autoReply, notifyOwner: form.notifyOwner, intents: form.remoteControl,
-        },
-        publish: { story: form.publishStory, note: form.publishNote },
-        group: {
-          enabled: form.groupEnabled, mode: form.groupMode,
-          cooldownSeconds: Number(form.groupCooldown) || 90, hourlyCap: Number(form.groupHourly) || 8,
-        },
-        storyMention: {
-          enabled: form.mentionEnabled,
-          x: Number(form.mentionX), y: Number(form.mentionY),
-          width: Number(form.mentionWidth), height: Number(form.mentionHeight),
-        },
-        safety: {
-          paused: form.paused, storyCap: Number(form.storyCap) || 14,
-          minIntervalMinutes: Number(form.minIntervalMinutes) || 0,
-          quietStart: form.quietStart, quietEnd: form.quietEnd,
-        },
-      }));
-
-      const savePersona = () => act('persona', () => jpost('/persona', {
-        name: form.personaName, mood: form.personaMood, identity: form.personaIdentity,
-      }));
-
       if (!st) {
         return h('div', { 'data-ig-page': '' },
           h('div', { 'data-ig-note': '' }, err ? `读取失败：${err}` : '读取中…'));
       }
       if (!form) return h('div', { 'data-ig-page': '' }, h('div', { 'data-ig-note': '' }, '初始化…'));
 
-      const set = (key) => (e) => setForm({ ...form, [key]: e.target ? e.target.value : e });
+      // 用函数式更新：连续快速输入时不要用渲染时的旧 form 覆盖别的字段
+      const flip = (key) => (v) => setForm((f) => ({ ...f, [key]: v }));
+      const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target ? e.target.value : e }));
+
+      // ── 分区保存：每个卡片只提交自己那部分（/config 深合并，不会动别的字段） ──
+      const cooldownSeconds = () => (Number.isFinite(Number(form.dmCooldownS))
+        ? Math.min(3600, Math.max(0, Math.round(Number(form.dmCooldownS)))) : 30);
+
+      const patchFeatures = () => ({
+        publish: { story: form.publishStory, note: form.publishNote },
+        dm: {
+          autoReply: form.autoReply, notifyOwner: form.notifyOwner, intents: form.remoteControl,
+          readShares: form.readShares, shareOpinion: form.shareOpinion,
+        },
+        group: { enabled: form.groupEnabled },
+      });
+      const patchDm = () => ({
+        owner: form.owner,
+        dm: {
+          enabled: form.dmEnabled,
+          dailyReplies: Number(form.dmReply) || 30,
+          cooldownSeconds: cooldownSeconds(),
+          fullAccess: form.fullAccess === true,
+        },
+      });
+      const patchGroup = () => ({
+        group: {
+          enabled: form.groupEnabled, mode: form.groupMode,
+          cooldownSeconds: Number(form.groupCooldown) || 90, hourlyCap: Number(form.groupHourly) || 8,
+        },
+      });
+      const patchMention = () => ({
+        storyMention: {
+          enabled: form.mentionEnabled,
+          x: Number(form.mentionX), y: Number(form.mentionY),
+          width: Number(form.mentionWidth), height: Number(form.mentionHeight),
+        },
+      });
+      const patchContent = () => ({
+        mode: form.mode, tone: form.tone, handle: form.handle, lifeNote: form.lifeNote,
+        noteTime: form.noteTime, useLlm: form.useLlm, enabled: form.enabled,
+        storiesPerDay: Number(form.storiesPerDay) || 10,
+        dayStart: form.dayStart, dayEnd: form.dayEnd,
+      });
+      const patchSafety = () => ({
+        safety: {
+          paused: form.paused, storyCap: Number(form.storyCap) || 14,
+          minIntervalMinutes: Number(form.minIntervalMinutes) || 0,
+          quietStart: form.quietStart, quietEnd: form.quietEnd,
+        },
+      });
+      const saveSection = (key, patch) => act(key, () => jpost('/config', patch));
+
+      // 人格卡这一区同时保存 persona.md 与「名字 / 心情」；
+      // 以前「保存人格卡」只提交 md，名字改了却没提交 —— 现在合成一个按钮。
+      const savePersonaCard = () => act('persona', async () => {
+        const md = await jpost('/persona-md', { md: personaMd });
+        if (md.ok) setPersonaMd(md.md || '');
+        const who = await jpost('/persona', { name: form.personaName, mood: form.personaMood, identity: form.personaIdentity });
+        return { ok: !!(md.ok && who.ok), error: md.error || who.error, persona: who.persona };
+      });
+
+      const SaveBar = ({ k, label, onSave, note }) => h('div', { 'data-ig-row': '' },
+        h('button', { 'data-ig-btn': '', 'data-primary': '', 'data-ig-save': k, disabled: busy === k, onClick: onSave },
+          busy === k ? '保存中…' : (label || '保存本区')),
+        note ? h('span', { 'data-ig-note': '' }, note) : null);
 
       const accountLabel = st.loggedIn
         ? `@${st.account?.username || st.cfg.username || '已登录'}`
@@ -310,15 +348,8 @@ window.__ModuleLoader__.load({
               h('input', { 'data-ig-input': '', value: form.personaMood, onChange: set('personaMood') }))),
           h('div', { 'data-ig-note': '' },
             `最近的记忆：${(st.persona.memories || []).map((m) => m.text).join('；') || '还没有'} · 进行中的事：${(st.persona.threads || []).map((t) => t.text).join('；') || '无'}`),
-          h('div', { 'data-ig-row': '' },
-            h('button', { 'data-ig-btn': '', disabled: busy === 'persona', onClick: savePersona },
-              busy === 'persona' ? '保存中…' : '保存人格'),
-            h('button', { 'data-ig-btn': '', 'data-primary': '', disabled: busy === 'personamd', onClick: () => act('personamd', async () => {
-              const out = await jpost('/persona-md', { md: personaMd });
-              if (out.ok) setPersonaMd(out.md || '');
-              return out;
-            }) }, busy === 'personamd' ? '保存中…' : '保存人格卡'),
-            h('button', { 'data-ig-btn': '', disabled: busy === 'save', onClick: save }, '保存全部设置'))),
+          h(SaveBar, { k: 'persona', label: '保存人格卡（含名字 / 心情）', onSave: savePersonaCard,
+            note: '名字、心情与人格卡一起提交' })),
 
         // ── 功能开关 ───────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
@@ -330,13 +361,16 @@ window.__ModuleLoader__.load({
               h('option', { value: 'all' }, '所有人都回复'),
               h('option', { value: 'mutual' }, '仅互关回复'),
               h('option', { value: 'follower' }, '未被关注不回复（对方关注我就回）'))),
-          h(Switch, { label: '收到别人的私信时，私信提醒主人', checked: form.notifyOwner, onChange: (v) => setForm({ ...form, notifyOwner: v }) }),
-          h(Switch, { label: '在群聊中回复别人的消息', checked: form.groupEnabled, onChange: (v) => setForm({ ...form, groupEnabled: v }) }),
-          h(Switch, { label: '自动发布 Story', checked: form.publishStory, onChange: (v) => setForm({ ...form, publishStory: v }) }),
-          h(Switch, { label: '自动发布 Note', checked: form.publishNote, onChange: (v) => setForm({ ...form, publishNote: v }) }),
-          h(Switch, { label: '私信远程控制（允许主人用自然语言让本机干活）', checked: form.remoteControl, onChange: (v) => setForm({ ...form, remoteControl: v }) }),
+          h(Switch, { label: '收到别人的私信时，私信提醒主人', checked: form.notifyOwner, onChange: flip('notifyOwner') }),
+          h(Switch, { label: '在群聊中回复别人的消息', checked: form.groupEnabled, onChange: flip('groupEnabled') }),
+          h(Switch, { label: '自动发布 Story', checked: form.publishStory, onChange: flip('publishStory') }),
+          h(Switch, { label: '自动发布 Note', checked: form.publishNote, onChange: flip('publishNote') }),
+          h(Switch, { label: '私信远程控制（允许主人用自然语言让本机干活）', checked: form.remoteControl, onChange: flip('remoteControl') }),
+          h(Switch, { label: '读取主人分享的 Post / Reels（读懂内容再回）', checked: form.readShares, onChange: flip('readShares') }),
+          h(Switch, { label: '读懂分享后，说一句自己的感想', checked: form.shareOpinion, onChange: flip('shareOpinion') }),
           h('div', { 'data-ig-note': '' },
-            '关掉 Story/Note 只是不再自动排期，手动「发布/预览」仍可用；关掉远程控制后，私信里的自然语言指令（回未读私信、让本机跑任务）不再执行。')),
+            '关掉 Story/Note 只是不再自动排期，手动「发布/预览」仍可用；关掉远程控制后，私信里的自然语言指令（回未读私信、让本机跑任务）不再执行。'),
+          h(SaveBar, { k: 'features', onSave: () => saveSection('features', patchFeatures()) })),
 
         // ── 主人 & 私信 ────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
@@ -344,9 +378,15 @@ window.__ModuleLoader__.load({
           h('div', { 'data-ig-note': '' }, '只有主人账号的私信会被当成指令执行；别人的消息永远不会执行指令，是否自动回复见上面「功能开关」。'),
           h(Field, { label: '主人的 IG 用户名（不带 @）' },
             h('input', { 'data-ig-input': '', value: form.owner, placeholder: 'ez4p1xel', onChange: set('owner') })),
-          h(Switch, { label: '接受主人的私信指令', checked: form.dmEnabled, onChange: (v) => setForm({ ...form, dmEnabled: v }) }),
+          h(Switch, { label: '接受主人的私信指令', checked: form.dmEnabled, onChange: flip('dmEnabled') }),
           h(Field, { label: '每天最多回几条' },
             h('input', { 'data-ig-input': '', type: 'number', min: 1, value: form.dmReply, onChange: set('dmReply') })),
+          h(Field, { label: '同一个私信会话的回复冷却（秒，默认 30）' },
+            h('input', { 'data-ig-input': '', type: 'number', min: 0, max: 3600, value: form.dmCooldownS, onChange: set('dmCooldownS') })),
+          h('div', { 'data-ig-note': '' }, '冷却按会话算：同一会话里两次回复至少隔这么久，别的会话不受影响；填 0 表示不冷却。短指令（状态/暂停/发一条/帮助）不受影响。'),
+          h(Switch, { label: '完全权限：让电脑干活时不再询问', checked: form.fullAccess, onChange: flip('fullAccess') }),
+          h('div', { 'data-ig-note': '' },
+            '打开后，主人私信里「在本机跑命令 / 让本机 DSH 跑任务」这两类会直接开始执行，不再先给草稿等「发」；每次仍会回一条「已开始 + 命令」，跑完把结果发你。对外发消息（回未读私信）仍然要确认。'),
           h('div', { 'data-ig-row': '' },
             h('button', { 'data-ig-btn': '', 'data-primary': '', disabled: busy === 'owner', onClick: () => act('owner', () => jpost('/owner', { owner: form.owner })) },
               busy === 'owner' ? '绑定中…' : '绑定主人'),
@@ -361,7 +401,9 @@ window.__ModuleLoader__.load({
             h('div', { 'data-ig-note': '' },
               '发「发布」或「send」：立刻发下一条到点的 Story；发「预览」或「preview」：只生成预览。\n' +
               '其它话会被当成聊天：小 p 会回一句，并把它当成主人今天的心情/生活素材记下来。\n' +
-              '全部走同一套安全阀（暂停/上限/间隔/安静时段）。'))),
+              '全部走同一套安全阀（暂停/上限/间隔/安静时段）。')),
+          h(SaveBar, { k: 'dm', onSave: () => saveSection('dm', patchDm()),
+            note: '用户名、私信开关、每日上限、会话冷却' })),
 
         // ── 群聊 ───────────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
@@ -369,7 +411,7 @@ window.__ModuleLoader__.load({
             h('div', { 'data-ig-h': '' }, '群聊'),
             h('span', { 'data-ig-badge': '', 'data-ig-ok': form.groupEnabled ? '' : undefined }, form.groupEnabled ? '会聊天' : '不参与')),
           h('div', { 'data-ig-note': '' }, '只处理主人在的群；默认被 @ 或叫名字才回一句，群里的消息不会被当成指令执行。'),
-          h(Switch, { label: '允许在群里聊天', checked: form.groupEnabled, onChange: (v) => setForm({ ...form, groupEnabled: v }) }),
+          h(Switch, { label: '允许在群里聊天', checked: form.groupEnabled, onChange: flip('groupEnabled') }),
           h('div', { 'data-ig-grid': '' },
             h(Field, { label: '什么时候回' },
               h('select', { 'data-ig-input': '', value: form.groupMode, onChange: set('groupMode') },
@@ -386,7 +428,8 @@ window.__ModuleLoader__.load({
               return out;
             }) }, busy === 'groups' ? '读取中…' : '查看我的群')),
           groups ? h('div', { 'data-ig-note': '' },
-            groups.length ? groups.map((g) => `${g.isGroup ? '👥' : '💬'} ${g.title || g.memberUsernames.join(', ')}${g.isGroup ? `（${g.memberUsernames.length} 人）` : ''}`).join('　') : '没有可显示的会话') : null),
+            groups.length ? groups.map((g) => `${g.isGroup ? '👥' : '💬'} ${g.title || g.memberUsernames.join(', ')}${g.isGroup ? `（${g.memberUsernames.length} 人）` : ''}`).join('　') : '没有可显示的会话') : null,
+          h(SaveBar, { k: 'group', onSave: () => saveSection('group', patchGroup()) })),
 
         // ── 每条 Story @ 主人 ──────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
@@ -394,13 +437,14 @@ window.__ModuleLoader__.load({
             h('div', { 'data-ig-h': '' }, '每条 Story 都 @ 主人'),
             h('span', { 'data-ig-note': '' }, st.storyMention?.owner ? `@${st.storyMention.owner}` : '未设置主人')),
           h('div', { 'data-ig-note': '' }, '发布时会在图上加一个 @ 贴纸（instagrapi StoryMention），文案里也会带上 @。'),
-          h(Switch, { label: '开启（推荐）', checked: form.mentionEnabled, onChange: (v) => setForm({ ...form, mentionEnabled: v }) }),
+          h(Switch, { label: '开启（推荐）', checked: form.mentionEnabled, onChange: flip('mentionEnabled') }),
           h('div', { 'data-ig-grid': '' },
             h(Field, { label: '位置 X（0-1）' }, h('input', { 'data-ig-input': '', type: 'number', step: '0.01', min: 0, max: 1, value: form.mentionX, onChange: set('mentionX') })),
             h(Field, { label: '位置 Y（0-1，越大越靠下）' }, h('input', { 'data-ig-input': '', type: 'number', step: '0.01', min: 0, max: 1, value: form.mentionY, onChange: set('mentionY') }))),
           h('div', { 'data-ig-grid': '' },
             h(Field, { label: '宽度（0-1）' }, h('input', { 'data-ig-input': '', type: 'number', step: '0.01', min: 0.05, max: 1, value: form.mentionWidth, onChange: set('mentionWidth') })),
-            h(Field, { label: '高度（0-1）' }, h('input', { 'data-ig-input': '', type: 'number', step: '0.01', min: 0.03, max: 1, value: form.mentionHeight, onChange: set('mentionHeight') })))),
+            h(Field, { label: '高度（0-1）' }, h('input', { 'data-ig-input': '', type: 'number', step: '0.01', min: 0.03, max: 1, value: form.mentionHeight, onChange: set('mentionHeight') }))),
+          h(SaveBar, { k: 'mention', onSave: () => saveSection('mention', patchMention()) })),
 
         // ── 登录 ───────────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
@@ -455,7 +499,7 @@ window.__ModuleLoader__.load({
         // ── 内容与节奏 ─────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
           h('div', { 'data-ig-h': '' }, '内容与节奏'),
-          h(Switch, { label: '插件启用', checked: form.enabled, onChange: (v) => setForm({ ...form, enabled: v }) }),
+          h(Switch, { label: '插件启用', checked: form.enabled, onChange: flip('enabled') }),
           h(Field, { label: '发布模式' },
             h('select', { 'data-ig-input': '', value: form.mode, onChange: set('mode') },
               h('option', { value: 'auto' }, '全自动发布（按计划发）'),
@@ -476,12 +520,13 @@ window.__ModuleLoader__.load({
             h('input', { 'data-ig-input': '', value: form.tone, onChange: set('tone') })),
           h(Field, { label: '今天的生活素材（会写进 Story 和 Note）' },
             h('textarea', { 'data-ig-textarea': '', value: form.lifeNote, placeholder: '例如：下午去海边走了走，风很大', onChange: set('lifeNote') })),
-          h(Switch, { label: '用模型润色文案（关掉则用固定模板）', checked: form.useLlm, onChange: (v) => setForm({ ...form, useLlm: v }) })),
+          h(Switch, { label: '用模型润色文案（关掉则用固定模板）', checked: form.useLlm, onChange: flip('useLlm') }),
+          h(SaveBar, { k: 'content', onSave: () => saveSection('content', patchContent()) })),
 
         // ── 安全 ───────────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },
           h('div', { 'data-ig-h': '' }, '安全阀'),
-          h(Switch, { label: '暂停发布（立即生效）', checked: form.paused, onChange: (v) => setForm({ ...form, paused: v }) }),
+          h(Switch, { label: '暂停发布（立即生效）', checked: form.paused, onChange: flip('paused') }),
           h('div', { 'data-ig-grid': '' },
             h(Field, { label: '每天 Story 上限（含手动）' },
               h('input', { 'data-ig-input': '', type: 'number', min: 1, max: 14, value: form.storyCap, onChange: set('storyCap') })),
@@ -492,9 +537,7 @@ window.__ModuleLoader__.load({
               h('input', { 'data-ig-input': '', value: form.quietStart, onChange: set('quietStart') })),
             h(Field, { label: '安静时段结束' },
               h('input', { 'data-ig-input': '', value: form.quietEnd, onChange: set('quietEnd') }))),
-          h('div', { 'data-ig-row': '' },
-            h('button', { 'data-ig-btn': '', 'data-primary': '', disabled: busy === 'save', onClick: save },
-              busy === 'save' ? '保存中…' : '保存设置'))),
+          h(SaveBar, { k: 'safety', onSave: () => saveSection('safety', patchSafety()) })),
 
         // ── 环境安装 ───────────────────────────────────────────────────────
         h('div', { 'data-ig-card': '' },

@@ -21,3 +21,5 @@ import './unread.test.mjs';
 import './pricing.test.mjs';
 import './spend.test.mjs';
 import './features.test.mjs';
+import './shares.test.mjs';
+import './no-third-party.test.mjs';

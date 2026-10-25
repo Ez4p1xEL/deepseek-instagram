@@ -286,6 +286,45 @@ def cmd_uid(payload):
     return 0
 
 
+SHARE_ITEM_TYPES = ("xma_media_share", "xma_clip", "xma_reel_share", "media")
+
+
+def _share_of(msg):
+    """分享类消息（Post / Reels / 直接发的图视频）的摘要；不是分享返回 None。
+
+    主人分享 Post/Reels 时，Insta 的私信里是一条没有文字（或只有一句评论）的 xma 消息；
+    Host 要能读到分享的到底是什么，所以这里把短码/配文/预览图/媒体 pk 一起透传出去。
+    """
+    item_type = str(getattr(msg, "item_type", "") or "")
+    if item_type not in SHARE_ITEM_TYPES:
+        return None
+    if item_type == "media":
+        media = getattr(msg, "media", None)
+        media_pk = str(getattr(media, "pk", "") or "") if media is not None else ""
+        if not media_pk:
+            return None
+        return {
+            "kind": "media",
+            "url": "",
+            "title": "",
+            "previewUrl": str(getattr(media, "thumbnail_url", "") or ""),
+            "mediaPk": media_pk,
+        }
+    xma = getattr(msg, "xma_share", None)
+    url = str(getattr(xma, "video_url", "") or "") if xma is not None else ""
+    title = str(getattr(xma, "title", "") or "") if xma is not None else ""
+    preview = str(getattr(xma, "preview_url", "") or "") if xma is not None else ""
+    if not url and not title and not preview:
+        return None
+    return {
+        "kind": "post" if item_type == "xma_media_share" else "reel",
+        "url": url,
+        "title": title,
+        "previewUrl": preview,
+        "mediaPk": "",
+    }
+
+
 def _msg_row(msg, thread, is_group, title, names_by_pk=None):
     timestamp = getattr(msg, "timestamp", None)
     if hasattr(timestamp, "timestamp"):
@@ -302,6 +341,7 @@ def _msg_row(msg, thread, is_group, title, names_by_pk=None):
         "username": username,
         "itemType": str(getattr(msg, "item_type", "") or "text"),
         "text": str(getattr(msg, "text", None) or ""),
+        "share": _share_of(msg),
         "timestamp": int(timestamp or 0),
     }
 
@@ -338,7 +378,9 @@ def cmd_dm_poll(payload):
                        for user in (getattr(thread, "users", None) or [])}
         for msg in (getattr(thread, "messages", None) or []):
             row = _msg_row(msg, thread, is_group, title, names_by_pk)
-            if not row["text"].strip():
+            # 分享的 Post/Reels 常常没有文字：不能因为空文本就把整条消息丢掉，
+            # 否则 Host 永远看不到主人分享过来的内容。
+            if not row["text"].strip() and not row.get("share"):
                 continue
             messages.append(row)
     messages.sort(key=lambda item: item["timestamp"])
@@ -374,6 +416,42 @@ def cmd_dm_threads(payload):
             "ownerInside": owner_pk in users if owner_pk else None,
         })
     emit({"ok": True, "kind": "dm-threads", "threads": len(rows), "items": rows})
+    return 0
+
+
+def cmd_media_info(payload):
+    """读一条 Post / Reels 的公开信息：主人分享过来时，助理要能读懂里面写了什么。"""
+    url = str(payload.get("url") or "").strip()
+    code = str(payload.get("code") or "").strip()
+    media_pk = str(payload.get("pk") or "").strip()
+    if not (url or code or media_pk):
+        return fail("bad-input", "需要 url / code / pk")
+    client = logged_client()
+    if not media_pk:
+        media_pk = client.media_pk_from_url(url) if url else client.media_pk_from_code(code)
+    media = client.media_info(str(media_pk))
+    user = getattr(media, "user", None)
+    taken = getattr(media, "taken_at", None)
+    if hasattr(taken, "timestamp"):
+        taken = int(taken.timestamp() * 1000)
+    emit({
+        "ok": True,
+        "kind": "media-info",
+        "pk": str(getattr(media, "pk", "") or media_pk),
+        "code": str(getattr(media, "code", "") or ""),
+        "mediaType": int(getattr(media, "media_type", 0) or 0),
+        "productType": str(getattr(media, "product_type", "") or ""),
+        "caption": str(getattr(media, "caption_text", "") or ""),
+        "title": str(getattr(media, "title", "") or ""),
+        "accessibilityCaption": str(getattr(media, "accessibility_caption", "") or ""),
+        "username": str(getattr(user, "username", "") or "") if user is not None else "",
+        "takenAt": int(taken or 0),
+        "likeCount": int(getattr(media, "like_count", 0) or 0),
+        "playCount": int(getattr(media, "play_count", 0) or 0),
+        "viewCount": int(getattr(media, "view_count", 0) or 0),
+        "commentCount": int(getattr(media, "comment_count", 0) or 0),
+        "videoDuration": float(getattr(media, "video_duration", 0) or 0),
+    })
     return 0
 
 
@@ -423,6 +501,7 @@ COMMANDS = {
     "uid": cmd_uid,
     "dm-poll": cmd_dm_poll,
     "dm-threads": cmd_dm_threads,
+    "media-info": cmd_media_info,
     "dm-send": cmd_dm_send,
     "friendship": cmd_friendship,
 }

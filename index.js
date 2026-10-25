@@ -26,7 +26,7 @@ import { evaluatePublish, DEFAULT_SAFETY } from './lib/safety.mjs';
 import { dayKey, DEFAULT_TIME_ZONE } from './lib/usage.mjs';
 import { dayPlan, kindQuota, clockOf, KINDS as PLAN_KINDS, KIND_LABELS } from './lib/plan.mjs';
 import {
-  loadPersona, savePersona, remember, setMood, recentMemories,
+  loadPersona, savePersona, remember, setMood, recentMemories, applyPersonaPatch,
   loadPersonaMd, savePersonaMd, personaMdPath, groupPrompt,
   systemPrompt, storyBrief, noteBrief, parseReply,
 } from './lib/persona.mjs';
@@ -38,8 +38,10 @@ import { costCny } from './lib/pricing.mjs';
 import { spendPath, addCall, summarizeSpend, loadSpendFile, saveSpendFile } from './lib/spend.mjs';
 import {
   normalizeAutoReply, autoReplyAllowed, shouldNotifyOwner, markNotified,
-  remoteControlAllowed, publishAllowed,
+  remoteControlAllowed, publishAllowed, fullAccessAllowed,
+  dmCooldownMs, dmCooldownReady, markDmReply,
 } from './lib/features.mjs';
+import { shareFromMessage, shareBrief, shareOpinionHint, shareWatchHint } from './lib/shares.mjs';
 
 export const name = 'deepseek-instagram';
 export const inject = ['webServer', 'tools'];
@@ -48,7 +50,7 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 // 徽标：`/state` 里能看到，用来确认「跑的是哪一版代码」。
 // ESM 在同一个 Host 进程里会缓存模块，改完文件**必须重启 DSH** 才会重载；
 // 2026-10-25 就在这上面栽过一次（改了 index.js 但进程跑的还是旧模块）。
-const BUILD = '2026-10-26.6';
+const BUILD = '2026-10-26.12';
 const DSH_HOME = process.env.DSH_HOME || join(homedir(), '.dsh');
 const HOME = join(DSH_HOME, 'instagram-assistant');
 const ROUTE = '/api/deepseek-instagram';
@@ -83,7 +85,11 @@ const DEFAULTS = {
   lifeNote: '',
   useLlm: true,
   pythonPath: '',
-  dm: { enabled: true, reply: true, dailyReplies: 30, history: 6, intents: true, autoReply: 'off', notifyOwner: true },
+  // cooldownSeconds：同一个私信会话里，两次回复至少隔这么久（设置页可改，0 = 不冷却）
+  // readShares：主人分享 Post/Reels 时，助理要不要真的去读内容（关掉就只推水位、不回）
+  // shareOpinion：读懂之后要不要发表自己的感想（关掉只回一句「看到了」）
+  // fullAccess：主人说「控制电脑」类指令时，是否跳过草稿确认直接执行（默认关）
+  dm: { enabled: true, reply: true, dailyReplies: 30, history: 6, intents: true, autoReply: 'off', notifyOwner: true, cooldownSeconds: 30, readShares: true, shareOpinion: true, fullAccess: false },
   // 群聊：默认「被 @ 或叫名字才回」，且只处理主人在的群
   group: { enabled: true, mode: 'mention', onlyOwnerGroups: true, cooldownSeconds: 90, hourlyCap: 8, history: 6 },
   // 设置页「功能开关」：只拦自动调度；手动发布与私信「发一条」仍然可用
@@ -527,13 +533,7 @@ function mentionPayload(cfg) {
 
 function savePersonaPatch(patch = {}) {
   const cfg = loadCfg();
-  const persona = personaNow(cfg);
-  const next = {
-    ...persona,
-    ...(patch.name ? { name: String(patch.name).slice(0, 20) } : {}),
-    ...(patch.identity ? { identity: String(patch.identity).slice(0, 120) } : {}),
-  };
-  if (patch.mood) Object.assign(next, setMood(persona, patch.mood));
+  const next = applyPersonaPatch(personaNow(cfg), patch);
   savePersona(HOME, next);
   return next;
 }
@@ -931,7 +931,7 @@ async function previewCycle({ reason = 'manual' } = {}) {
 // ── 主人在私信里管理这个号 ────────────────────────────────────────────────
 
 function readDmState() {
-  return readJson(DM_FILE, { lastHandledTs: 0, lastPollAt: 0, lastError: '', repliesToday: 0, day: '' });
+  return readJson(DM_FILE, { lastHandledTs: 0, lastPollAt: 0, lastError: '', repliesToday: 0, day: '', replyLast: {} });
 }
 
 function writeDmState(state) { writeJson(DM_FILE, state); }
@@ -1124,6 +1124,60 @@ async function chatReplyDm(message, cfg, state, history = [], { scene = 'dm' } =
   return { ok: true, reply, source };
 }
 
+/**
+ * 主人分享了一条 Post / Reels：先把内容读懂，再当聊天回一句。
+ * 读不到正文就只说「看到了」，绝不编造里面写了什么；受 dm.dailyReplies 限制。
+ */
+async function chatReplyShare(message, share, cfg, state, history = []) {
+  if (Number(state.repliesToday || 0) >= Number(cfg.dm?.dailyReplies || 30)) return { skipped: 'daily-cap' };
+  let info = null;
+  if (share.url || share.mediaPk) {
+    const payload = share.mediaPk ? { pk: share.mediaPk } : { url: share.url };
+    const fetched = await igCall('media-info', payload, { timeoutMs: 60_000 });
+    if (fetched.ok) info = fetched;
+    else log(`分享内容读取失败（${fetched.code} ${fetched.error}），只按配文回`);
+  }
+  // 「读懂后要不要说感想」是单独一个开关：关掉时仍然读内容（用来判断值不值得回），
+  // 但只回一句「看到了」，不评价内容本身。
+  const opinion = cfg.dm?.shareOpinion !== false;
+  // 视频分享只读文案与数据（不下载视频、不抽帧、不转写），提示词里要讲清楚，别让模型假装看过画面。
+  const brief = `${shareBrief(share, info)}${shareWatchHint(info)}${shareOpinionHint(opinion)}`;
+  const persona = personaNow(cfg);
+  const prompt = groupPrompt({
+    cfg,
+    persona,
+    personaMd: personaMdNow(),
+    history,
+    incoming: brief,
+    scene: 'dm',
+    sender: message.username || String(message.userId || ''),
+    title: '私信（主人）',
+  });
+  let reply = '';
+  let source = 'template';
+  const clock = withTimeout(30_000);
+  try {
+    if (cfg.useLlm !== false) {
+      reply = String(await askOnce({ system: prompt.system, user: prompt.user }, { signal: clock.signal, kind: 'share' }) || '').trim();
+      if (reply) source = 'llm';
+    }
+  } catch (error) {
+    log(`分享回复 LLM 失败，用兜底句：${error?.message || error}`);
+  } finally {
+    clock.done();
+  }
+  if (!reply) reply = opinion ? '看到了，我晚点细看。' : '看到了，我先记下。';
+  reply = clampText(reply.replace(/\s+/g, ' '), 600);
+  const sent = await igCall('dm-send', { threadId: message.threadId, text: reply }, { timeoutMs: 60_000 });
+  if (!sent.ok) {
+    log(`回分享失败：${sent.code} ${sent.error}`);
+    return { ok: false, code: sent.code, error: sent.error };
+  }
+  state.repliesToday = Number(state.repliesToday || 0) + 1;
+  log(`分享回复（${message.username || message.userId}，${source}，${share.kind}${share.code ? ` ${share.code}` : ''}）：${reply.slice(0, 30)}`);
+  return { ok: true, reply, source };
+}
+
 // ── 主人的自然语言指令：草稿确认 + 本机执行 ──────────────────────────────
 
 const PENDING_TTL_MS = 10 * 60 * 1000;
@@ -1286,20 +1340,30 @@ async function execReplyUnread(pending, state) {
   return { text: `发了 ${sent} 条，还有 ${failed.length} 条没成：\n${failed.slice(0, 3).join('\n')}` };
 }
 
+/**
+ * 真正启动「让电脑干活」的两类动作。
+ * 只负责起后台任务并回一句话；结果由 fireAndReport 另发一条私信。
+ */
+function fireComputerAction(kind, args, message, { auto = false } = {}) {
+  const prefix = auto ? '（完全权限）' : '';
+  if (kind === 'dsh_task') {
+    const task = String(args?.task || '');
+    fireAndReport(message.threadId, 'DSH 任务', dshSpawnSpec(task));
+    return { text: `${prefix}已开始跑：dsh headless 「${task.slice(0, 60)}」\n跑完我把结果发你。` };
+  }
+  const command = String(args?.command || '');
+  fireAndReport(message.threadId, '命令', { file: command, args: [], opts: { shell: true, timeoutMs: SHELL_TIMEOUT_MS } });
+  return { text: `${prefix}已开始跑：${command.slice(0, 60)}\n跑完我把结果发你。` };
+}
+
 /** 主人回「发」之后执行草稿。 */
 async function executePending(state, message, cfg) {
   const pending = state.pending;
   state.pending = null;
   if (!pendingAlive(pending)) return { text: '这个草稿超过 10 分钟了，已经作废；你再说一遍吧。' };
   if (pending.kind === 'reply_unread') return execReplyUnread(pending, state);
-  if (pending.kind === 'dsh_task') {
-    fireAndReport(message.threadId, `DSH 任务`, dshSpawnSpec(pending.args?.task));
-    return { text: `开始跑了：dsh headless 「${String(pending.args?.task || '').slice(0, 60)}」\n跑完我把结果发你。` };
-  }
-  if (pending.kind === 'run_command') {
-    const command = String(pending.args?.command || '');
-    fireAndReport(message.threadId, '命令', { file: command, args: [], opts: { shell: true, timeoutMs: SHELL_TIMEOUT_MS } });
-    return { text: `开始跑了：${command.slice(0, 60)}\n跑完我把结果发你。` };
+  if (pending.kind === 'dsh_task' || pending.kind === 'run_command') {
+    return fireComputerAction(pending.kind, pending.args || {}, message);
   }
   return { text: '这个草稿我认不出来了，重说一遍吧。' };
 }
@@ -1307,10 +1371,16 @@ async function executePending(state, message, cfg) {
 /**
  * 执行一个动作。
  * 有副作用的（回未读私信 / 让 DSH 干活 / 在本机跑命令）只生成草稿、存进 dm-state 等确认；
- * 其余直接跑，返回要回给主人的话。
+ * 开了「完全权限」时，让电脑干活的两类直接执行（仍回执命令摘要 + 结果）。
+ * 其余动作直接跑，返回要回给主人的话。
  */
 async function handleAction(action, message, cfg, state, poll = {}) {
   if (!needsConfirm(action.action)) return runDmCommand({ cmd: action.action }, message, cfg);
+  if (fullAccessAllowed(cfg, action.action)) {
+    log(`完全权限：直接执行 ${action.action}：${JSON.stringify(action.args || {}).slice(0, 160)}`);
+    const fired = fireComputerAction(action.action, action.args || {}, message, { auto: true });
+    return fired.text;
+  }
   let draft;
   if (action.action === 'reply_unread') {
     draft = await draftUnread(cfg, state, poll, action.args?.limit || 3);
@@ -1360,7 +1430,7 @@ function dmPoll(options = {}) {
   return pollOnce(() => dmPollOnce(options));
 }
 
-const STRANGER_COOLDOWN_MS = 10 * 60 * 1000;
+// 私信会话冷却改为配置项 dm.cooldownSeconds（设置页可改，默认 30 秒）
 const NOTIFY_THROTTLE_MS = 30 * 60 * 1000;
 const FRIENDSHIP_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -1469,6 +1539,12 @@ async function dmPollOnce({ force = false } = {}) {
       state.lastHandledTs = Math.max(state.lastHandledTs, ts);
       continue;
     }
+    // 分享类消息通常没有文字：只有「主人在 1:1 私信里分享」才处理；
+    // 群里的、别人发来的分享不接（否则模型会对着空文本硬回一句）。
+    if (message.share && (message.isGroup || !isOwnerSender({ userId: message.userId, ownerPk }))) {
+      state.lastHandledTs = Math.max(state.lastHandledTs, ts);
+      continue;
+    }
     if (message.isGroup) {
       // 群聊只聊天，不执行指令；背景只取同群、早于这条的。
       // 要回的那条不在这里 —— replyInGroup 会把它作为 incoming 单独传进去。
@@ -1495,18 +1571,20 @@ async function dmPollOnce({ force = false } = {}) {
           const allowed = autoReplyAllowed(mode, rel);
           const capped = Number(state.repliesToday || 0) >= Number(strangerCfg.dm?.dailyReplies || 30);
           const threadKey = String(message.threadId || '');
-          const cooled = Date.now() - (Number(state.strangerLast?.[threadKey]) || 0) < STRANGER_COOLDOWN_MS;
+          const cooldownMs = dmCooldownMs(strangerCfg);
+          const cooled = !dmCooldownReady(state, threadKey, Date.now(), cooldownMs);
           if (!allowed) {
             log(`不自动回这条非主人私信（user ${message.userId}，档位 ${mode}${rel ? '' : '，关注关系未知'}）`);
           } else if (capped) {
             log('今天私信回复已达上限，跳过自动回复');
           } else if (cooled) {
-            log(`同一会话 10 分钟内刚回过，跳过自动回复（thread ${threadKey}）`);
+            log(`同一会话 ${Math.round(cooldownMs / 1000)} 秒内刚回过，跳过自动回复（thread ${threadKey}）`);
           } else {
             const history = threadHistory(messages, message, strangerCfg.dm?.history || 6, selfPk);
             const answered = await chatReplyDm(message, strangerCfg, state, history, { scene: 'stranger' });
             if (answered.ok) {
-              state.strangerLast = { ...(state.strangerLast || {}), [threadKey]: Date.now() };
+              const marked = markDmReply(state, threadKey);
+              state.replyLast = marked.replyLast;
               handled.push({ cmd: 'stranger', at: Date.now(), text: String(message.text || '').slice(0, 40) });
             }
           }
@@ -1517,6 +1595,32 @@ async function dmPollOnce({ force = false } = {}) {
     }
     const textNow = String(message.text || '');
     const cfgNow = loadCfg();
+    // 主人分享的 Post / Reels（通常没有文字）：先读懂内容再回；
+    // 关掉 dm.readShares 就只推进水位，不读也不回（省 API 调用）。
+    const share = shareFromMessage(message);
+    if (share) {
+      if (cfgNow.dm?.readShares === false) {
+        log(`主人分享了一条 ${share.kind}，但「读取分享内容」开关关着，跳过`);
+        state.lastHandledTs = Math.max(state.lastHandledTs, ts);
+        state.lastHandledId = message.id || state.lastHandledId;
+        continue;
+      }
+      const shareCooldownMs = dmCooldownMs(cfgNow);
+      if (!dmCooldownReady(state, message.threadId, Date.now(), shareCooldownMs)) {
+        log(`同一会话 ${Math.round(shareCooldownMs / 1000)} 秒内刚回过，这条分享先压着`);
+        continue;
+      }
+      state.lastHandledTs = Math.max(state.lastHandledTs, ts);
+      state.lastHandledId = message.id || state.lastHandledId;
+      const shareHistory = threadHistory(messages, message, cfgNow.dm?.history || 6);
+      const shared = await chatReplyShare(message, share, cfgNow, state, shareHistory);
+      if (shared.ok) {
+        const marked = markDmReply(state, message.threadId);
+        state.replyLast = marked.replyLast;
+        handled.push({ cmd: 'share', at: Date.now(), text: `${share.kind}${share.code ? ` ${share.code}` : ''}` });
+      }
+      continue;
+    }
     // ① 有一份等确认的草稿：先看这句是不是「发」/「取消」
     if (state.pending) {
       const pendingKind = state.pending.kind;
@@ -1582,12 +1686,22 @@ async function dmPollOnce({ force = false } = {}) {
       continue;
     }
     // ④ 闲聊：不是指令也要回一句，否则「发了消息没人理」
+    // 每个私信会话有冷却（设置页可改，默认 30 秒）：冷却内不回，也不推进水位，下一轮再回
+    const chatCooldownMs = dmCooldownMs(cfgNow);
+    if (!dmCooldownReady(state, message.threadId, Date.now(), chatCooldownMs)) {
+      log(`同一会话 ${Math.round(chatCooldownMs / 1000)} 秒内刚回过，这条先压着：「${textNow.slice(0, 20)}」`);
+      continue;
+    }
     log(`主人发来闲聊（${decision.reason}）：「${textNow.slice(0, 30)}」`);
     state.lastHandledTs = Math.max(state.lastHandledTs, ts);
     state.lastHandledId = decision.id || state.lastHandledId;
     const history = threadHistory(messages, message, cfgNow.dm?.history || 6);
     const chatted = await chatReplyDm(message, cfgNow, state, history);
-    if (chatted.ok) handled.push({ cmd: 'chat', at: Date.now(), text: textNow.slice(0, 40) });
+    if (chatted.ok) {
+      const marked = markDmReply(state, message.threadId);
+      state.replyLast = marked.replyLast;
+      handled.push({ cmd: 'chat', at: Date.now(), text: textNow.slice(0, 40) });
+    }
   }
   // replyInGroup / chatReplyDm 会各自写一次磁盘状态（冷却、回复数），
   // 这里必须合并，否则用本地旧副本覆盖，冷却永远不生效。
@@ -1606,6 +1720,8 @@ async function dmPollOnce({ force = false } = {}) {
     ownerThreadId: state.ownerThreadId || disk.ownerThreadId || '',
     notifyLast: { ...(disk.notifyLast || {}), ...(state.notifyLast || {}) },
     strangerLast: { ...(disk.strangerLast || {}), ...(state.strangerLast || {}) },
+    // 每个私信会话上次回复时间（冷却用）
+    replyLast: { ...(disk.replyLast || {}), ...(state.replyLast || {}) },
     friendship: { ...(disk.friendship || {}), ...(state.friendship || {}) },
   });
   return { ok: true, handled: handled.length, lastError: state.lastError, since: state.lastHandledTs };

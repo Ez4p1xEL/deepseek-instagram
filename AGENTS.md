@@ -29,6 +29,12 @@
    DeepSeek Messages 接口会整条拒绝：`messages.N: tool_addition blocks can only be in system messages`。
    本机 2026-10-25 那个会话里攒了 **74 条**（因为反复 reload）。正确做法：改完 Host 代码 → 让用户**开新会话**
    （或重启 DSH）再验证；旧会话只会越来越脏。
+10. **运行时零第三方 DSH 插件依赖。** 只允许官方内置模块与 `react`：`index.js` 只 import `node:` 与 `./lib/*.mjs`，
+    `client.js` 只 `require('react')`，`package.json` 不得出现 dependencies/devDependencies/peerDependencies；
+    不 import 任何其他插件的代码、不读它们的文件/账本（例如鲸鱼挂件的 `.dshw-usage.json` 只当背景事实，不用）。
+    文档层面只引用官方 skill（`dsh-agent-preset/skills/cordis-plugin-development`），不把第三方插件当依据。
+    该约束由 `test/no-third-party.test.mjs` 强制（静态 import、动态 require/import、package.json、Python 依赖四类扫描）。
+    读官方 asar 里的文件用 `scripts/asar-extract.mjs`（导出到 `.tmp/asar/`，本身不入库）。
 
 ## 本机（Windows）沙箱坑
 
@@ -61,7 +67,7 @@
 ## 测试
 
 ```bash
-node test/run.mjs                       # 109 个单测，进程内跑（node --test 会被沙箱 spawn EPERM 挡掉）
+node test/run.mjs                       # 113 个单测，进程内跑（node --test 会被沙箱 spawn EPERM 挡掉）
 node -e "import('./lib/dshusage.mjs').then(m=>console.log(m.buildStats({home:'C:/Users/Ez4p1/.dsh'})))"
 echo '{}' | .venv/Scripts/python.exe vendor/instagram-mcp/ig_cli.py doctor
 Get-Content out/demo-card.png            # 或直接看设置页预览
@@ -101,9 +107,10 @@ Get-Content out/demo-card.png            # 或直接看设置页预览
   `ownerPk` 为空时 ig_cli 会用 `user_id_from_username` 现查一次。
 - 新增路由：`GET/POST /persona-md`、`GET /dm/threads`；新工具 `ig_persona`。
 - 私信轮询条件改成 `dm.enabled || group.enabled`（只开群聊也能轮询）。
-- 单测现在 **109** 个：`node test/run.mjs`。新增覆盖：mentionPayload、groupDecision、多帧 zstd、
+- 单测现在 **113** 个：`node test/run.mjs`。新增覆盖：mentionPayload、groupDecision、多帧 zstd、
   指令清单/意图 JSON 校验（actions）、未读私信挑选（unread）、关注关系档位与提醒节流（features）、
-  峰谷计价与用量账本（pricing/spend）、回复上下文与单飞闸（reply/singleflight）。
+  峰谷计价与用量账本（pricing/spend）、回复上下文与单飞闸（reply/singleflight）、
+  零第三方依赖护栏（no-third-party：静态 import / 动态 require / package.json / Python 依赖）。
 
 ## 约定
 
